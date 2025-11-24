@@ -1,0 +1,16 @@
+{
+    "name": "小公寓Apt.cafe",
+    "location": {
+        "lat": 24.987906917303558,
+        "lng": 121.57544396793462,
+        "address": "2樓, No. 56號指南路二段文山區臺北市116"
+    },
+    "tags": ["有插座", "有貓咪", "Free WiFi"],
+    "quietness": 3.0,
+    "wifiStability": 4.5,
+    "seatComfort": 4.0,
+    "costPerformance": 4.0,
+    "timeLimit": 2,
+    "seatAvailable": 3.0,
+    "foodQuality": 5.0
+}
