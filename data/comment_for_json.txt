@@ -1,1 +1,5 @@
 "otherInfo" ->    0: No, 1: Yes, 2: depends
+"hasManySockets": "many", ->  "none", "few", "many"
+
+MongoDB 的順序是 [經度(lng), 緯度(lat)]，跟 Google Maps 相反。
+好處： 你可以直接用 MongoDB 的 $near 指令瞬間撈出「方圓 1 公里內的咖啡廳」，不用自己在 Python/Node.js 裡寫數學公式算距離。
