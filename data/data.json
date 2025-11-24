@@ -3,14 +3,35 @@
     "location": {
         "lat": 24.987906917303558,
         "lng": 121.57544396793462,
-        "address": "2樓, No. 56號指南路二段文山區臺北市116"
+        "address": "2樓, No. 56號指南路二段文山區臺北市116",
+        "city": "臺北市",
+        "district": "文山區"
     },
-    "tags": ["有插座", "有貓咪", "Free WiFi"],
-    "quietness": 3.0,
-    "wifiStability": 4.5,
-    "seatComfort": 4.0,
-    "costPerformance": 4.0,
-    "timeLimit": 2,
-    "seatAvailable": 3.0,
-    "foodQuality": 5.0
+    "tags": ["有插座", "有貓咪", "近公車站"],
+    "info": {
+        "quietness": 3.0,
+        "wifiStability": 4.5,
+        "seatComfort": 4.0,
+        "costPerformance": 4.0,
+        "seatAvailable": 3.0,
+        "foodQuality": 5.0,
+        "decorateStyle": 4.0
+    },
+    "otherInfo": {
+        "timeLimit": 2,
+        "singleDish": 0,
+        "dessert": 1,
+        "manySockets": 1,
+        "mainMeals": 1,
+        "standWorking": 0
+    },
+    "openingTime": {
+        "Mon": "11:00 - 21:00",
+        "Tue": "11:00 - 21:00",
+        "Wed": "11:00 - 21:00",
+        "Thu": "11:00 - 21:00",
+        "Fri": "11:00 - 21:00",
+        "Sat": "11:00 - 21:00",
+        "Sun": "11:00 - 21:00"
+    }
 }
