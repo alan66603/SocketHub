@@ -1,22 +1,28 @@
-function App() {
-  return (
-    // 這裡的 className 都是 Tailwind 的語法
-    // h-screen: 高度佔滿整個螢幕
-    // bg-gray-100: 背景是淺灰色
-    // flex justify-center items-center:讓內容上下左右置中
-    <div className="h-screen w-screen bg-gray-100 flex flex-col justify-center items-center">
-      
-      <div className="bg-white p-8 rounded-xl shadow-lg text-center">
-        <h1 className="text-4xl font-bold text-blue-600 mb-4">
-          SocketHub 啟動成功 🚀
-        </h1>
-        <p className="text-gray-500">
-          Tailwind CSS 已經生效，準備開始做地圖！
-        </p>
-      </div>
+import { APIProvider, Map } from '@vis.gl/react-google-maps';
 
-    </div>
-  )
+function App() {
+  // 台北市的座標 (Taipei 101 附近)
+  const position = { lat: 25.0330, lng: 121.5654 };
+  const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+  return (
+    // 1. APIProvider: 負責載入 Google Maps 的腳本
+    <APIProvider apiKey={API_KEY}>
+      
+      {/* 2. 外層容器: 設定高度與寬度 (Tailwind) */}
+      <div className="h-screen w-full">
+        
+        {/* 3. Map 元件: 真正的地圖 */}
+        <Map
+          defaultCenter={position}
+          defaultZoom={14}
+          mapId="DEMO_MAP_ID" // 這是 Google 規定的必填欄位，練習用隨便填即可
+          className="h-full w-full"
+        />
+        
+      </div>
+    </APIProvider>
+  );
 }
 
-export default App
+export default App;
