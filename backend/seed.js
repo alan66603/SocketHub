@@ -1,8 +1,8 @@
-require('dotenv').config(); // 載入 .env 設定
+require('dotenv').config();
 const mongoose = require('mongoose');
-const Cafe = require('./models/Cafe'); // 匯入你寫好的 Schema
+const Cafe = require('./models/Cafe'); // load mongoose schema
 
-// 1. 連線資料庫
+// connect to database
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('🔥 MongoDB 連線成功！準備寫入資料...');
@@ -13,7 +13,7 @@ mongoose.connect(process.env.MONGO_URI)
     console.error(err);
   });
 
-// 2. 準備假資料
+// Test data
 const sampleCafe = {
   name: "小公寓Apt.cafe",
   location: {
@@ -52,18 +52,17 @@ const sampleCafe = {
   }
 };
 
-// 3. 寫入資料
+// write data
 const seedData = async () => {
   try {
-    // 先清空舊資料（選用，避免重複）
+    // clean up old data
     // await Cafe.deleteMany({}); 
     
-    // 建立新資料
     const newCafe = await Cafe.create(sampleCafe);
     console.log('✅ 成功寫入第一筆咖啡廳資料！');
     console.log(newCafe);
     
-    // 關閉連線
+    // close connection
     mongoose.connection.close();
   } catch (error) {
     console.log('❌ 寫入失敗：', error.message);
