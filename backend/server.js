@@ -5,7 +5,7 @@ const cors = require("cors");
 const Cafe = require("./models/Cafe");
 
 const app = express();
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 8080;
 
 // --- 1. Middleware (中間件) 設定 ---
 app.use(cors()); // 允許跨域請求 (讓 React 可以連線)
