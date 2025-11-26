@@ -14,7 +14,7 @@ const socketMap = { many: "多", few: "少", none: "無" };
 const timeLimitMap = { limited: "⏳ 限時", unlimited: "✅ 不限時" };
 
 // ✨ 1. 新增 TopBar 元件 (處理搜尋與移動地圖)
-function TopBar({ cafes, onSelectCafe }) {
+function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
   const map = useMap(); // 取得地圖實體
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -57,10 +57,15 @@ function TopBar({ cafes, onSelectCafe }) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
+        const pos = { lat: latitude, lng: longitude };
+
         if (map) {
-          map.panTo({ lat: latitude, lng: longitude });
+          map.panTo(pos);
           map.setZoom(15);
         }
+
+        onUserLocationUpdate(pos);
+
         setIsLocating(false);
       },
       () => {
@@ -132,8 +137,8 @@ function App() {
 
   const [isAddingMode, setIsAddingMode] = useState(false);
   const [newCafeLocation, setNewCafeLocation] = useState(null);
-
   const [isLocating, setIsLocating] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
 
   const hoverTimeoutRef = useRef(null);
 
@@ -242,6 +247,7 @@ function App() {
         <TopBar
           cafes={cafes}
           onSelectCafe={(cafe) => setActiveState({ cafe, mode: "click" })}
+          onUserLocationUpdate={(pos) => setUserLocation(pos)}
         />
 
         <Map
@@ -320,6 +326,17 @@ function App() {
                 </div>
               </div>
             </InfoWindow>
+          )}
+
+          {/* User Location Pin */}
+          {userLocation && (
+            <AdvancedMarker position={userLocation} zIndex={100}>
+              <Pin
+                background={"#EA4335"}
+                glyphColor={"#FFF"}
+                borderColor={"#FFF"}
+              />
+            </AdvancedMarker>
           )}
 
           {/* temporate pin */}
