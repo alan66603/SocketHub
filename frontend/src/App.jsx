@@ -202,11 +202,21 @@ function App() {
             setNewCafeLocation(null); // 重置之前的選擇
             handleClose(); // 關閉任何開啟的 InfoWindow
           }}
-          className={`absolute bottom-8 right-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all z-10 
+          className={`absolute bottom-8 left-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all z-10 
             ${isAddingMode ? "bg-red-500 text-white rotate-45" : "bg-blue-600 text-white hover:bg-blue-700"}`}
         >
           {/* 如果是新增模式顯示 X，否則顯示 + */}
-          <span className="font-bold">+</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2.5}
+            stroke="currentColor"
+            className="2-8 h-8"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.7-7.5h-15"/>
+          </svg>
+          {/* <span className="font-bold">+</span> */}
         </button>
         
         {/* button of "using current position to add" */}
@@ -214,7 +224,7 @@ function App() {
           <button
             onClick={handleUserCurrentLocation}
             disabled={isLocating}
-            className="absolute bottom-24 right-4 bg-white text-gray-800 px-4 py-2 rounded-full shadow-lg flex items-center space-x-2 hover:bg-gray-100 transition z-10 font-medium"
+            className="absolute bottom-24 left-4 bg-white text-gray-800 px-4 py-2 rounded-full shadow-lg flex items-center space-x-2 hover:bg-gray-100 transition z-10 font-medium"
           >
             {isLocating ? (
               <span>📡 定位中...</span>
