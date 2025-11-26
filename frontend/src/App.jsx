@@ -8,26 +8,30 @@ import {
   InfoWindow,
 } from "@vis.gl/react-google-maps";
 
+const socketMap = {
+  many: "多",
+  few: "少",
+  none: "無",
+};
+
+const timeLimitMap = {
+  limited: "⏳ 限時",
+  unlimited: "✅ 不限時",
+};
+
 function App() {
   const defaultPosition = { lat: 25.033, lng: 121.5654 }; // Taipei 101
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   // 1. define State: used to store the data of cafe from the backend
   const [cafes, setCafes] = useState([]);
-  const [selectedCafe, setSelectedCafe] = useState(null);
+
+  const [activeState, setActiveState] = useState({
+    cafe: null,
+    mode: null,  // 'hover' or 'click'
+  });
 
   const hoverTimeoutRef = useRef(null);
-
-  const socketMap = {
-    many: "多",
-    few: "少",
-    none: "無",
-  };
-
-  const timeLimitMap = {
-    limited: "⏳ 限時",
-    unlimited: "✅ 不限時",
-  };
 
   // 2. useEffect: Once the page was loaded, it goes to fetch the data from the backend
   useEffect(() => {
@@ -44,13 +48,25 @@ function App() {
 
   // mouse enter
   const handleMouseEnter = (cafe) => {
+    // 🛑 防呆 1：如果現在已經是「鎖定模式 (Click)」，且滑鼠指的正是同一家店，什麼都別做 (別干擾鎖定)
+    if (activeState.mode === "click" && activeState.cafe?._id === cafe._id) {
+      return;
+    }
+
+    // 🛑 防呆 2：如果現在已經是「預覽模式 (Hover)」，且顯示的也是這家店，不要重置計時器 (解決滑鼠微動重置問題)
+    if (activeState.mode === "hover" && activeState.cafe?._id === cafe._id) {
+      return;
+    }
+
+    // 清除舊的計時器
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
 
+    // 設定新的計時器 (0.5秒後開啟預覽)
     hoverTimeoutRef.current = setTimeout(() => {
-      setSelectedCafe(cafe);
-    }, 500); // 500 ms (0.5 sec)
+      setActiveState({ cafe: cafe, mode: "hover" });
+    }, 500);
   };
 
   // mouse leave
@@ -59,15 +75,27 @@ function App() {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
-    // close the window after mouse leave
-    setSelectedCafe(null);
+    // 🛑 關鍵邏輯：只有在「預覽模式 (Hover)」下，移開滑鼠才要關閉視窗
+    // 如果是「鎖定模式 (Click)」，移開滑鼠「不做任何事」，保持視窗開啟
+    if (activeState.mode === "hover") {
+      setActiveState({ cafe: null, mode: null });
+    }
+  };
+
+  const handleClose = () => {
+    setActiveState({cafe: null, mode: null});
   };
 
   const handleClick = (cafe) => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
-    setSelectedCafe(cafe);
+
+    if(activeState.mode === "click" && activeState.cafe?._id === cafe._id){
+      handleClose();
+    }else{
+      setActiveState({cafe: cafe, mode: "click"});
+    }
   };
 
   return (
@@ -105,26 +133,27 @@ function App() {
             </AdvancedMarker>
           ))}
 
-          {selectedCafe && (
+          {activeState.cafe && (
             <InfoWindow
               position={{
-                lat: selectedCafe.location.coordinates[1],
-                lng: selectedCafe.location.coordinates[0],
+                lat: activeState.cafe.location.coordinates[1],
+                lng: activeState.cafe.location.coordinates[0],
               }}
-              onCloseClick={() => setSelectedCafe(null)}
+              onCloseClick={handleClose}
               minWidth={200}
+              pixelOffset={[0, -30]}
             >
               <div className="p-2">
-                <h2 className="text-lg font-bold mb-2">{selectedCafe.name}</h2>
+                <h2 className="text-lg font-bold mb-2">{activeState.cafe.name}</h2>
                 <div className="text-sm text-gray-600 space-y-1">
-                  <p>📍 {selectedCafe.location.address}</p>
-                  <p>📶 WiFi 穩定度: {selectedCafe.ratings.wifiStability} ⭐</p>
+                  <p>📍 {activeState.cafe.location.address}</p>
+                  <p>📶 WiFi 穩定度: {activeState.cafe.ratings.wifiStability} ⭐</p>
                   <p>
                     🔌 插座數量:{" "}
-                    {socketMap[selectedCafe.features.socketAvailability]}
+                    {socketMap[activeState.cafe.features.hasManySockets]}
                   </p>
                   <p className="mt-2 text-blue-600 font-semibold">
-                    {timeLimitMap[selectedCafe.features.limitedTime]}
+                    {timeLimitMap[activeState.cafe.features.timeLimit]}
                   </p>
                 </div>
               </div>
