@@ -33,10 +33,11 @@ function App() {
 
   const hoverTimeoutRef = useRef(null);
 
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api/cafes"
   // 2. useEffect: Once the page was loaded, it goes to fetch the data from the backend
   useEffect(() => {
     axios
-      .get("http://localhost:8080/api/cafes")
+      .get(API_URL)
       .then((response) => {
         console.log("Data Fetched.", response.data);
         setCafes(response.data); // store the data into State, React will renew the page
