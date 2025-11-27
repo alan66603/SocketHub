@@ -126,7 +126,7 @@ function App() {
   const defaultPosition = { lat: 25.033, lng: 121.5654 }; // Taipei 101
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const API_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:8080/api/cafes";
+    "http://localhost:8080/api/cafes" || import.meta.env.VITE_API_URL ;
 
   // 1. define State: used to store the data of cafe from the backend
   const [cafes, setCafes] = useState([]);
@@ -139,6 +139,8 @@ function App() {
   const [newCafeLocation, setNewCafeLocation] = useState(null);
   const [isLocating, setIsLocating] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
+
+  const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
 
   const hoverTimeoutRef = useRef(null);
 
@@ -164,6 +166,45 @@ function App() {
   useEffect(() => {
     fetchCafes();
   }, []);
+
+  const handleMapIdle = async (mapEvent) => {
+    const map = mapEvent.map;
+    const zoom = map.getZoom();
+
+    // cost effeciency: no searching if zoom out too much
+    if(zoom < 14) return;
+
+    const center = map.getCenter();
+    const lat = center.lat();
+    const lng = center.lng();
+
+    setIsLoadingGoogle(true);
+
+    try{
+      const res = await axios.post(`${API_URL}/search`, {
+        lat,
+        lng,
+        radius: 1500,
+      });
+      const newCafes = res.data;
+
+      // De-duplication
+      setCafes((prevCafes) => {
+        const existingIds = new Set(prevCafes.map((c) => c.googlePlaceId || c._id));
+
+        const uniqueNewCafes = newCafes.filter((c) => !existingIds.has(c.googlePlaceId || c._id));
+
+        // no state updating if no new data
+        if (uniqueNewCafes.length === 0) return prevCafes;
+
+        return [...prevCafes, ...uniqueNewCafes];
+      })
+    }catch(error){
+      console.error("Hybrid search error", error);
+    }finally{
+      setIsLoadingGoogle(false);
+    }
+  };
 
   // mouse enter
   const handleMouseEnter = (cafe) => {
@@ -256,6 +297,7 @@ function App() {
           mapId="DEMO_MAP_ID" // 這是 Google 規定的必填欄位，練習用隨便填即可
           className="h-full w-full"
           onClick={handleMapClick}
+          onIdle={handleMapIdle}
           style={{ cursor: isAddingMode ? "crosshair" : "grab" }}
           disableDefaultUI={true}
         >
@@ -279,9 +321,10 @@ function App() {
             >
               {/* Form of pin and color */}
               <Pin
-                background={"#FBBC04"}
-                glyphColor={"#000"}
-                borderColor={"#000"}
+                // ✨ 視覺區隔：如果是 Google 資料顯示灰色/藍色，本地資料顯示黃色
+                background={cafe.source === 'google' ? "#4285F4" : "#FBBC04"}
+                glyphColor={"#FFF"}
+                borderColor={cafe.source === 'google' ? "#1967D2" : "#000"}
               />
             </AdvancedMarker>
           ))}
@@ -296,10 +339,15 @@ function App() {
               minWidth={200}
               pixelOffset={[0, -30]}
             >
-              <div className="p-2">
-                <h2 className="text-lg font-bold mb-2">
-                  {activeState.cafe.name}
-                </h2>
+                <div className="p-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-lg font-bold">{activeState.cafe.name}</h2>
+                  {/* ✨ 顯示來源標籤 */}
+                  {activeState.cafe.source === 'google' && (
+                    <span className="text-[10px] bg-blue-100 text-blue-600 px-1 rounded border border-blue-200">Google</span>
+                  )}
+                </div>
+
                 <div className="text-sm text-gray-600 space-y-1">
                   <p>📍 {activeState.cafe.location.address}</p>
                   <div className="flex flex-wrap gap-1 my-1">
@@ -316,6 +364,9 @@ function App() {
                   <p>
                     📶 WiFi 穩定度: {activeState.cafe.ratings.wifiStability} ⭐
                   </p>
+
+                  <p>⭐ Google 評分: {activeState.cafe.ratings.googleRating}</p>
+
                   <p>
                     🔌 插座數量:
                     {socketMap[activeState.cafe.features.hasManySockets]}
@@ -398,6 +449,13 @@ function App() {
               </>
             )}
           </button>
+        )}
+
+        {isLoadingGoogle && (
+          <div className="absolute top-20 right-4 bg-white/90 px-3 py-1 rounded shadow text-xs font-medium text-gray-500 z-10 flex items-center gap-2">
+            <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            搜尋附近...
+          </div>
         )}
 
         {isAddingMode && (
