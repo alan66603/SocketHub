@@ -125,8 +125,9 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
 function App() {
   const defaultPosition = { lat: 25.033, lng: 121.5654 }; // Taipei 101
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const API_URL =
-    "http://localhost:8080/api/cafes" || import.meta.env.VITE_API_URL ;
+  const API_URL = import.meta.env.DEV 
+  ? "http://localhost:8080/api/cafes"
+  : import.meta.env.VITE_API_URL;
 
   // 1. define State: used to store the data of cafe from the backend
   const [cafes, setCafes] = useState([]);
