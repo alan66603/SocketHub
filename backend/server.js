@@ -19,6 +19,25 @@ mongoose
   .catch((err) => console.error("❌ 連線失敗:", err));
 
 
+function getDistanceInMeters(lat1, lon1, lat2, lon2) {
+  const R = 6371; // 地球半徑 (km)
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) *
+      Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d * 1000; // Return in meters
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
+
 // --- 3. API Routes ---
 
 // [GET] get every cafe
@@ -62,54 +81,77 @@ app.post('/api/cafes/search', async (req, res) => {
 
         const googlePlaces = googleResponse.data.places || [];
 
-        // B. 準備 MongoDB 查詢
-        // 收集所有 Google 回傳的 ID
-        // ex:
-        // googlePlaces = [
-        // { id: "A001", name: "Starbucks" },
-        // { id: "A002", name: "7-11" },
-        // { id: "A003", name: "FamilyMart" }
-        // ]
-        const googlePlaceIds = googlePlaces.map(p => p.id);
+        // B. 抓取本地資料庫 (這裡稍微改一下：抓取全部，或者抓取範圍內的)
+        // 為了簡單起見，我們先抓取所有本地咖啡廳來做比對
+        // (進階作法是用 MongoDB $near 查詢，但目前資料量少，全部抓出來比對也很快)
+        const allLocalCafes = await Cafe.find();
 
-        // 去我們的資料庫找：這些 Google 的店，我們有沒有存過？
-        const localCafes = await Cafe.find({
-            googlePlaceId: { $in: googlePlaceIds }
-        });
-
-        // C. 合併資料 (Merge Strategy)
-        const mergedResults = googlePlaces.map(gPlace => {
-            // 檢查這家店是否在我們的 DB 裡
-            const localMatch = localCafes.find(local => local.googlePlaceId === gPlace.id);
+        // C. 智慧合併 (Smart Merge)
+        const mergedResults = await Promise.all(googlePlaces.map(async (gPlace) => {
+            
+            // 🔍 尋找匹配：
+            // 條件 1: ID 相同 (最強烈的匹配)
+            // 條件 2: 距離極近 (< 30公尺) 視為同一家 (解決名稱不同、ID 缺失的問題)
+            let localMatch = allLocalCafes.find(local => {
+                // 檢查 ID
+                if (local.googlePlaceId === gPlace.id) return true;
+                
+                // 檢查距離
+                const dist = getDistanceInMeters(
+                    local.location.coordinates[1], // lat
+                    local.location.coordinates[0], // lng
+                    gPlace.location.latitude,
+                    gPlace.location.longitude
+                );
+                
+                // 如果距離小於 30 公尺，我們就假設它是同一家
+                return dist < 30;
+            });
 
             if (localMatch) {
-                // [情況 1] 資料庫有：優先使用我們的資料 (裡面有使用者的詳細 Tag 和評分)
+                // [情況 1] 找到本地資料 (無論是透過 ID 還是距離)
+                
+                // ✨ 自動修復機制 (Self-Healing)：
+                // 如果是透過「距離」找到的，但它還沒有 googlePlaceId，我們幫它補上去！
+                // 這樣下次搜尋就會直接透過 ID 匹配，不用再算距離了。
+                if (!localMatch.googlePlaceId) {
+                    console.log(`🔗 自動連結: ${localMatch.name} <--> ${gPlace.displayName.text}`);
+                    localMatch.googlePlaceId = gPlace.id;
+                    await localMatch.save(); // 寫回資料庫
+                }
+
+                // 回傳混合資料 (以本地資料為主)
                 return {
                     ...localMatch.toObject(),
-                    source: 'hybrid' // 標記：這是混合資料
+                    source: 'hybrid',
+                    // 這裡可以選擇是否要更新本地的 googleRating
+                    ratings: {
+                        ...localMatch.ratings,
+                        googleRating: gPlace.rating // 更新最新的 Google 評分
+                    }
                 };
             } else {
-                // [情況 2] 資料庫沒有：把 Google 資料轉成我們的前端格式
+                // [情況 2] 完全沒看過的新店
                 return {
-                    _id: gPlace.id, // 暫時用 Google ID 當 ID
+                    _id: gPlace.id, // 暫時 ID
                     googlePlaceId: gPlace.id,
                     name: gPlace.displayName?.text || "未命名咖啡廳",
                     location: {
                         type: "Point",
-                        coordinates: [gPlace.location.longitude, gPlace.location.latitude], // 注意順序: [lng, lat]
+                        coordinates: [gPlace.location.longitude, gPlace.location.latitude],
                         address: gPlace.formattedAddress
                     },
                     ratings: {
-                        wifiStability: 0, 
-                        googleRating: gPlace.rating, // 這是 Google 的評分
+                        wifiStability: 0,
+                        googleRating: gPlace.rating,
                         googleRatingCount: gPlace.userRatingCount
                     },
-                    tags: [], 
+                    tags: [],
                     features: { hasManySockets: 'unknown', timeLimit: 'unknown' },
-                    source: 'google' // 標記：這純粹是 Google 的資料
+                    source: 'google'
                 };
             }
-        });
+        }));
 
         res.json(mergedResults);
 
