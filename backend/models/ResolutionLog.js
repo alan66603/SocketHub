@@ -19,7 +19,6 @@ const resolutionLogSchema = new mongoose.Schema({
   aiReason: String // 選用：存下來方便除錯
 }, { timestamps: true });
 
-// 複合索引：確保我們查詢這一對組合時超快
 resolutionLogSchema.index({ localCafeId: 1, googlePlaceId: 1 }, { unique: true });
 
 module.exports = mongoose.model('ResolutionLog', resolutionLogSchema);
