@@ -1,7 +1,7 @@
 # SocketHub
 A comprehensive cafe map.
 
-SocketHub - Find your next coding spot in Taiwan.
+SocketHub - Find your next coding spot.
 
 
 tailwindcss@3.4.17
