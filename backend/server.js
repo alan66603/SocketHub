@@ -309,6 +309,84 @@ app.post("/api/cafes", async (req, res) => {
   }
 });
 
+app.post('/api/cafes/contribute', async (req, res) => {
+    const { 
+        googlePlaceId, name, address, lat, lng, // 基本資料 (Google 店需要)
+        newTags = [], 
+        wifiRating, 
+        socketStatus, 
+        timeStatus,
+        comment
+    } = req.body;
+
+    try {
+        let cafe;
+
+        // 1. 先找找看資料庫有沒有這家店
+        if (googlePlaceId) {
+            cafe = await Cafe.findOne({ googlePlaceId });
+        }
+
+        // 2. 如果沒有 (這是 Google 的店，第一次有人編輯)，建立新檔
+        if (!cafe) {
+            console.log("✨ 建立新本地檔案 (from Google):", name);
+            cafe = new Cafe({
+                googlePlaceId,
+                name,
+                location: {
+                    type: "Point",
+                    coordinates: [lng, lat],
+                    address
+                },
+                // 初始化預設值
+                ratings: { wifiStability: 0, wifiVoteCount: 0 },
+                features: { hasManySockets: 'unknown', timeLimit: 'unknown' }
+            });
+        }
+
+        // 3. 更新 Tags (Set 去重)
+        if (newTags.length > 0) {
+            newTags.forEach(tag => {
+                if (!cafe.tags.includes(tag)) {
+                    cafe.tags.push(tag);
+                }
+            });
+        }
+
+        // 4. 更新 WiFi 評分 (加權平均法)
+        if (wifiRating && Number(wifiRating) > 0) {
+            const currentScore = cafe.ratings.wifiStability || 0;
+            const currentCount = cafe.ratings.wifiVoteCount || 0;
+            
+            // 公式：(舊分 * 舊人數 + 新分) / (舊人數 + 1)
+            const newScore = ((currentScore * currentCount) + Number(wifiRating)) / (currentCount + 1);
+            
+            cafe.ratings.wifiStability = parseFloat(newScore.toFixed(1));
+            cafe.ratings.wifiVoteCount = currentCount + 1;
+        }
+
+        // 5. 更新 插座 & 限時 (採用「最新回報優先」策略)
+        if (socketStatus && socketStatus !== "unknown") {
+            cafe.features.hasManySockets = socketStatus;
+        }
+        if (timeStatus && timeStatus !== "unknown") {
+            cafe.features.timeLimit = timeStatus;
+        }
+
+        // 6. 新增評論
+        if (comment && comment.trim().length > 0) {
+            cafe.comments.push({ text: comment });
+        }
+
+        await cafe.save();
+        res.json({ message: "更新成功", cafe });
+
+    } catch (error) {
+        console.error("Contribute Error:", error);
+        res.status(500).json({ message: "更新失敗", error: error.message });
+    }
+});
+
 // --- 4. activate the server ---
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

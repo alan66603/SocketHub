@@ -9,6 +9,7 @@ import {
   useMap,
 } from "@vis.gl/react-google-maps";
 import CafeForm from "./components/CafeForm";
+import ContributePanel from "./components/ContributePanel";
 
 const socketMap = { many: "多", few: "少", none: "無" };
 const timeLimitMap = { limited: "⏳ 限時", unlimited: "✅ 不限時" };
@@ -76,38 +77,38 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
   };
 
   return (
-    <div className="absolute top-0 left-0 w-full z-20 bg-white shadow-md px-4 py-3 flex items-center justify-between">
-      <h1 className="text-xl font-bold text-blue-600 hidden sm:block">
-        SocketHub ☕
-      </h1>
-
-      <div className="relative flex-1 max-w-md mx-4">
-        <div className="flex items-center border rounded-full px-3 py-1 bg-gray-50">
-          <span className="text-gray-400">🔍</span>
+    <div className="absolute top-0 left-0 w-full z-50 pointer-events-none p-4 flex items-start justify-between">
+      {/* 搜尋區塊 */}
+      <div className="pointer-events-auto flex items-center gap-4 w-full max-w-md bg-white shadow-lg rounded-full px-4 py-2">
+        <h1 className="text-lg font-bold text-blue-600 hidden sm:block whitespace-nowrap mr-2">
+          SocketHub ☕
+        </h1>
+        <div className="relative flex-1">
           <input
             type="text"
             placeholder="搜尋咖啡廳..."
-            className="ml-2 w-full bg-transparent outline-none text-sm"
+            className="w-full bg-transparent outline-none text-sm"
             value={searchQuery}
             onChange={handleSearch}
           />
-        </div>
-        {searchResults.length > 0 && (
-          <div className="absolute top-10 left-0 w-full bg-white shadow-xl rounded-lg max-h-60 overflow-y-auto border border-gray-100">
-            {searchResults.map((cafe) => (
-              <div
-                key={cafe._id}
-                className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0"
-                onClick={() => handleResultClick(cafe)}
-              >
-                <div className="font-bold text-gray-800">{cafe.name}</div>
-                <div className="text-xs text-gray-500 truncate">
-                  {cafe.location.address}
+          {searchResults.length > 0 && (
+            <div className="absolute top-12 left-0 w-full bg-white shadow-xl rounded-lg max-h-60 overflow-y-auto border border-gray-100 z-50">
+              {searchResults.map((cafe) => (
+                <div
+                  key={cafe._id}
+                  className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0"
+                  onClick={() => handleResultClick(cafe)}
+                >
+                  <div className="font-bold text-gray-800">{cafe.name}</div>
+                  <div className="text-xs text-gray-500 truncate">
+                    {cafe.location.address}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
+        <span className="text-gray-400">🔍</span>
       </div>
 
       <button
@@ -145,6 +146,9 @@ function App() {
 
   const hoverTimeoutRef = useRef(null);
 
+  const [activeCafeForContribution, setActiveCafeForContribution] = useState(null);  // control the display of sidebar
+  const [currentZoom, setCurrentZoom] = useState(13);
+
   const allTags = useMemo(() => {
     const tags = new Set();
     cafes.forEach((cafe) => {
@@ -172,8 +176,9 @@ function App() {
     const map = mapEvent.map;
     const zoom = map.getZoom();
 
+    setCurrentZoom(zoom);
     // cost effeciency: no searching if zoom out too much
-    if(zoom < 14) return;
+    if(zoom < 13) return;
 
     const center = map.getCenter();
     const lat = center.lat();
@@ -282,204 +287,413 @@ function App() {
     );
   };
 
-  return (
+return (
     <APIProvider apiKey={API_KEY}>
-      {/* 2. 外層容器: 設定高度與寬度 (Tailwind) */}
-      <div className="h-screen w-full relative pt-16">
-        <TopBar
-          cafes={cafes}
-          onSelectCafe={(cafe) => setActiveState({ cafe, mode: "click" })}
-          onUserLocationUpdate={(pos) => setUserLocation(pos)}
-        />
-
+      <div className="h-screen w-full relative">
+        
+        {/* 1. 地圖層 (最底層) */}
         <Map
           defaultCenter={defaultPosition}
           defaultZoom={13}
-          mapId="DEMO_MAP_ID" // 這是 Google 規定的必填欄位，練習用隨便填即可
-          className="h-full w-full"
+          mapId="DEMO_MAP_ID"
+          className="w-full h-full"
           onClick={handleMapClick}
           onIdle={handleMapIdle}
           style={{ cursor: isAddingMode ? "crosshair" : "grab" }}
           disableDefaultUI={true}
         >
-          {cafes.map((cafe) => (
+          {/* ✨ 修正：只有在 Zoom >= 13 時才顯示圖釘 */}
+          {currentZoom >= 13 && cafes.map((cafe) => (
             <AdvancedMarker
               key={cafe._id}
               position={{
-                // ⚠️ 注意：MongoDB 是 [經度, 緯度]，Google Maps 要 { lat, lng }
-                // 所以這裡要反過來拿：coordinates[1] 是 lat, coordinates[0] 是 lng
                 lat: cafe.location.coordinates[1],
                 lng: cafe.location.coordinates[0],
               }}
-              title={cafe.name} // hover to show the cafe name
+              title={cafe.name}
               className="cursor-pointer"
-              onClick={(e) => {
-                e.stop();
-                handleClick(cafe);
-              }} // store this cafe on click
+              onClick={(e) => { e.stop(); handleClick(cafe); }}
               onMouseEnter={() => handleMouseEnter(cafe)}
               onMouseLeave={handleMouseLeave}
             >
-              {/* Form of pin and color */}
-              <Pin
-                // ✨ 視覺區隔：如果是 Google 資料顯示灰色/藍色，本地資料顯示黃色
-                background={cafe.source === 'google' ? "#4285F4" : "#FBBC04"}
-                glyphColor={"#FFF"}
+              <Pin 
+                // 視覺區隔：Google 來源顯示藍色，Hybrid/Local 顯示黃色
+                background={cafe.source === 'google' ? "#4285F4" : "#FBBC04"} 
+                glyphColor={"#FFF"} 
                 borderColor={cafe.source === 'google' ? "#1967D2" : "#000"}
               />
             </AdvancedMarker>
           ))}
 
           {activeState.cafe && (
-            <InfoWindow
-              position={{
-                lat: activeState.cafe.location.coordinates[1],
-                lng: activeState.cafe.location.coordinates[0],
-              }}
-              onCloseClick={handleClose}
-              minWidth={200}
-              pixelOffset={[0, -30]}
-            >
-                <div className="p-2">
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-lg font-bold">{activeState.cafe.name}</h2>
-                  {/* ✨ 顯示來源標籤 */}
-                  {activeState.cafe.source === 'google' && (
-                    <span className="text-[10px] bg-blue-100 text-blue-600 px-1 rounded border border-blue-200">Google</span>
-                  )}
-                </div>
+             <InfoWindow
+               position={{
+                 lat: activeState.cafe.location.coordinates[1],
+                 lng: activeState.cafe.location.coordinates[0],
+               }}
+               onCloseClick={handleClose}
+               minWidth={200}
+               pixelOffset={[0, -30]}
+             >
+                {/* ✨ 優化：限制最大寬度 */}
+                <div className="p-1 max-w-[220px]">
+                 <div className="flex items-center gap-2 mb-2">
+                    <h2 className="text-base font-bold text-gray-800 line-clamp-1">{activeState.cafe.name}</h2>
+                    {activeState.cafe.source === 'google' && (
+                        <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 rounded-full border border-blue-200 whitespace-nowrap">Google</span>
+                    )}
+                 </div>
+                 
+                 <div className="text-sm text-gray-600 space-y-1.5">
+                   <p className="flex items-start gap-1">
+                     <span className="shrink-0">📍</span> 
+                     <span className="line-clamp-2 text-xs">{activeState.cafe.location.address}</span>
+                   </p>
+                   
+                   <div className="flex flex-wrap gap-1 my-1.5">
+                     {activeState.cafe.tags && activeState.cafe.tags.slice(0, 3).map(tag => (
+                       <span key={tag} className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 border border-gray-200">#{tag}</span>
+                     ))}
+                   </div>
 
-                <div className="text-sm text-gray-600 space-y-1">
-                  <p>📍 {activeState.cafe.location.address}</p>
-                  <div className="flex flex-wrap gap-1 my-1">
-                    {activeState.cafe.tags &&
-                      activeState.cafe.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                  </div>
-                  <p>
-                    📶 WiFi 穩定度: {activeState.cafe.ratings.wifiStability} ⭐
-                  </p>
+                   <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                      <p>📶 WiFi: <span className="font-medium text-gray-800">{activeState.cafe.ratings.wifiStability || '-'}</span></p>
+                      <p>🔌 插座: <span className="font-medium text-gray-800">{socketMap[activeState.cafe.features.hasManySockets] || '-'}</span></p>
+                      <p>⏳ 限時: <span className="font-medium text-gray-800">{timeLimitMap[activeState.cafe.features.timeLimit] || '-'}</span></p>
+                      {activeState.cafe.source === 'google' && (
+                        <p>⭐ Google: <span className="font-medium text-amber-500">{activeState.cafe.ratings.googleRating}</span></p>
+                      )}
+                   </div>
 
-                  <p>⭐ Google 評分: {activeState.cafe.ratings.googleRating}</p>
+                   {/* 顯示最新評論 (如果有) */}
+                   {activeState.cafe.comments && activeState.cafe.comments.length > 0 && (
+                      <div className="mt-2 p-1.5 bg-gray-50 rounded text-xs text-gray-600 italic border-l-2 border-blue-400 line-clamp-2">
+                        "{activeState.cafe.comments[activeState.cafe.comments.length - 1].text}"
+                      </div>
+                   )}
 
-                  <p>
-                    🔌 插座數量:
-                    {socketMap[activeState.cafe.features.hasManySockets]}
-                  </p>
-                  <p className="mt-2 text-blue-600 font-semibold">
-                    {timeLimitMap[activeState.cafe.features.timeLimit]}
-                  </p>
-                </div>
-              </div>
-            </InfoWindow>
+                   <button
+                     onClick={() => {
+                        setActiveCafeForContribution(activeState.cafe); // 打開側邊欄
+                        handleClose(); 
+                     }}
+                     className="mt-3 w-full bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 py-1.5 rounded text-xs font-bold transition flex items-center justify-center gap-1"
+                   >
+                     <span>✍️</span> 貢獻 / 編輯
+                   </button>
+                 </div>
+               </div>
+             </InfoWindow>
           )}
 
-          {/* User Location Pin */}
           {userLocation && (
             <AdvancedMarker position={userLocation} zIndex={100}>
-              <Pin
-                background={"#EA4335"}
-                glyphColor={"#FFF"}
-                borderColor={"#FFF"}
-              />
+              <Pin background={"#EA4335"} glyphColor={"#FFF"} borderColor={"#FFF"} />
             </AdvancedMarker>
           )}
 
-          {/* temporate pin */}
           {newCafeLocation && (
             <AdvancedMarker position={newCafeLocation}>
-              <Pin
-                background={"#EA4335"}
-                glyphColor={"#FFF"}
-                borderColor={"#B31412"}
-              />
+              <Pin background={"#EA4335"} glyphColor={"#FFF"} borderColor={"#B31412"} />
             </AdvancedMarker>
           )}
         </Map>
 
-        {/* floating botton */}
+        {/* 2. UI 層 (浮在地圖上面) */}
+        
+        <TopBar 
+          cafes={cafes} 
+          onSelectCafe={(cafe) => setActiveState({ cafe, mode: "click" })}
+          onUserLocationUpdate={(loc) => setUserLocation(loc)} 
+        />
+
+        {/* 左下角常駐定位按鈕 */}
+        <button
+          onClick={handleUserCurrentLocation}
+          disabled={isLocating}
+          className="absolute bottom-24 left-4 w-12 h-12 bg-white rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-gray-50 z-50 transition border border-gray-100"
+          title="定位目前位置"
+        >
+           {isLocating ? (
+             <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+           ) : (
+             <span className="text-xl">📍</span>
+           )}
+        </button>
+
+        {/* FAB Buttons (新增按鈕) */}
         <button
           onClick={() => {
             setIsAddingMode(!isAddingMode);
-            setNewCafeLocation(null); // 重置之前的選擇
-            handleClose(); // 關閉任何開啟的 InfoWindow
+            setNewCafeLocation(null);
+            handleClose();
           }}
-          className={`absolute bottom-8 left-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all z-10 
-            ${
-              isAddingMode
-                ? "bg-red-500 text-white rotate-45"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
+          className={`absolute bottom-8 left-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-300 z-50 
+            ${isAddingMode ? "bg-red-500 text-white rotate-45" : "bg-blue-600 text-white hover:bg-blue-700"}`}
         >
-          {/* 如果是新增模式顯示 X，否則顯示 + */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2.5}
-            stroke="currentColor"
-            className="2-8 h-8"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 4.5v15m7.7-7.5h-15"
-            />
+          {/* ✨ 修正 SVG class */}
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-8 h-8">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
         </button>
-
-        {/* button of "using current position to add" */}
+        
+        {/* 新增模式下的「在此處新增」按鈕 */}
         {isAddingMode && (
           <button
-            onClick={handleUserCurrentLocation}
-            disabled={isLocating}
-            className="absolute bottom-24 left-4 bg-white text-gray-800 px-4 py-2 rounded-full shadow-lg flex items-center space-x-2 hover:bg-gray-100 transition z-10 font-medium"
+            onClick={() => {
+                // 如果已經定位過了 (userLocation 存在)，直接用它
+                if (userLocation) {
+                    setNewCafeLocation(userLocation);
+                    setIsAddingMode(false);
+                } else {
+                    handleUserCurrentLocation(); // 否則重新定位
+                }
+            }}
+            className="absolute bottom-24 left-20 bg-white text-gray-800 px-4 py-2 rounded-full shadow-lg flex items-center space-x-2 hover:bg-gray-100 transition z-50 font-medium border border-gray-100"
           >
-            {isLocating ? (
-              <span>📡 定位中...</span>
-            ) : (
-              <>
-                <span>📍</span>
-                <span>以目前位置新增</span>
-              </>
-            )}
+            <span>📍</span><span>在此處新增</span>
           </button>
         )}
 
+        {/* Loading Indicator */}
         {isLoadingGoogle && (
-          <div className="absolute top-20 right-4 bg-white/90 px-3 py-1 rounded shadow text-xs font-medium text-gray-500 z-10 flex items-center gap-2">
+          <div className="absolute top-20 right-4 bg-white/90 px-3 py-1 rounded-full shadow text-xs font-medium text-gray-500 z-50 flex items-center gap-2 border border-gray-100">
             <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             搜尋附近...
           </div>
         )}
 
         {isAddingMode && (
-          <div className="absolute top-24 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-semibold pointer-events-none z-10 whitespace-nowrap">
-            請點擊地圖新增
+          <div className="absolute top-24 left-1/2 transform -translate-x-1/2 bg-gray-800/90 text-white px-4 py-2 rounded-full text-sm font-semibold pointer-events-none z-50 whitespace-nowrap shadow-lg backdrop-blur-sm">
+            請點擊地圖位置
           </div>
         )}
 
-        {/* create new cafe form (only shows when coordinates exist) */}
+        {/* 新增表單 */}
         {newCafeLocation && (
-          <CafeForm
-            coordinates={newCafeLocation}
+          <CafeForm 
+            coordinates={newCafeLocation} 
             existingTags={allTags}
             onClose={() => setNewCafeLocation(null)}
-            onCafeAdded={() => {
-              fetchCafes(); // refetch all data of the cafes
-              setNewCafeLocation(null); // close the form
+            onCafeAdded={() => { fetchCafes(); setNewCafeLocation(null); }}
+          />
+        )}
+
+        {/* ✨ 編輯/貢獻側邊欄 */}
+        {activeCafeForContribution && (
+          <ContributePanel
+            cafe={activeCafeForContribution}
+            existingTags={allTags}
+            onClose={() => setActiveCafeForContribution(null)}
+            onCafeUpdated={() => {
+                setActiveCafeForContribution(null);
+                window.location.reload(); 
             }}
           />
         )}
       </div>
     </APIProvider>
   );
-}
+}  
+
+  // return (
+  //   <APIProvider apiKey={API_KEY}>
+  //     {/* 2. 外層容器: 設定高度與寬度 (Tailwind) */}
+  //     <div className="h-screen w-full relative pt-16">
+  //       <TopBar
+  //         cafes={cafes}
+  //         onSelectCafe={(cafe) => setActiveState({ cafe, mode: "click" })}
+  //         onUserLocationUpdate={(pos) => setUserLocation(pos)}
+  //       />
+
+  //       <Map
+  //         defaultCenter={defaultPosition}
+  //         defaultZoom={13}
+  //         mapId="DEMO_MAP_ID" // 這是 Google 規定的必填欄位，練習用隨便填即可
+  //         className="h-full w-full"
+  //         onClick={handleMapClick}
+  //         onIdle={handleMapIdle}
+  //         style={{ cursor: isAddingMode ? "crosshair" : "grab" }}
+  //         disableDefaultUI={true}
+  //       >
+  //         {cafes.map((cafe) => (
+  //           <AdvancedMarker
+  //             key={cafe._id}
+  //             position={{
+  //               // ⚠️ 注意：MongoDB 是 [經度, 緯度]，Google Maps 要 { lat, lng }
+  //               // 所以這裡要反過來拿：coordinates[1] 是 lat, coordinates[0] 是 lng
+  //               lat: cafe.location.coordinates[1],
+  //               lng: cafe.location.coordinates[0],
+  //             }}
+  //             title={cafe.name} // hover to show the cafe name
+  //             className="cursor-pointer"
+  //             onClick={(e) => {
+  //               e.stop();
+  //               handleClick(cafe);
+  //             }} // store this cafe on click
+  //             onMouseEnter={() => handleMouseEnter(cafe)}
+  //             onMouseLeave={handleMouseLeave}
+  //           >
+  //             {/* Form of pin and color */}
+  //             <Pin
+  //               // ✨ 視覺區隔：如果是 Google 資料顯示灰色/藍色，本地資料顯示黃色
+  //               background={cafe.source === 'google' ? "#4285F4" : "#FBBC04"}
+  //               glyphColor={"#FFF"}
+  //               borderColor={cafe.source === 'google' ? "#1967D2" : "#000"}
+  //             />
+  //           </AdvancedMarker>
+  //         ))}
+
+  //         {activeState.cafe && (
+  //           <InfoWindow
+  //             position={{
+  //               lat: activeState.cafe.location.coordinates[1],
+  //               lng: activeState.cafe.location.coordinates[0],
+  //             }}
+  //             onCloseClick={handleClose}
+  //             minWidth={200}
+  //             pixelOffset={[0, -30]}
+  //           >
+  //               <div className="p-2">
+  //               <div className="flex items-center gap-2 mb-2">
+  //                 <h2 className="text-lg font-bold">{activeState.cafe.name}</h2>
+  //                 {/* ✨ 顯示來源標籤 */}
+  //                 {activeState.cafe.source === 'google' && (
+  //                   <span className="text-[10px] bg-blue-100 text-blue-600 px-1 rounded border border-blue-200">Google</span>
+  //                 )}
+  //               </div>
+
+  //               <div className="text-sm text-gray-600 space-y-1">
+  //                 <p>📍 {activeState.cafe.location.address}</p>
+  //                 <div className="flex flex-wrap gap-1 my-1">
+  //                   {activeState.cafe.tags &&
+  //                     activeState.cafe.tags.map((tag) => (
+  //                       <span
+  //                         key={tag}
+  //                         className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600"
+  //                       >
+  //                         #{tag}
+  //                       </span>
+  //                     ))}
+  //                 </div>
+  //                 <p>
+  //                   📶 WiFi 穩定度: {activeState.cafe.ratings.wifiStability} ⭐
+  //                 </p>
+
+  //                 <p>⭐ Google 評分: {activeState.cafe.ratings.googleRating}</p>
+
+  //                 <p>
+  //                   🔌 插座數量:
+  //                   {socketMap[activeState.cafe.features.hasManySockets]}
+  //                 </p>
+  //                 <p className="mt-2 text-blue-600 font-semibold">
+  //                   {timeLimitMap[activeState.cafe.features.timeLimit]}
+  //                 </p>
+  //               </div>
+  //             </div>
+  //           </InfoWindow>
+  //         )}
+
+  //         {/* User Location Pin */}
+  //         {userLocation && (
+  //           <AdvancedMarker position={userLocation} zIndex={100}>
+  //             <Pin
+  //               background={"#EA4335"}
+  //               glyphColor={"#FFF"}
+  //               borderColor={"#FFF"}
+  //             />
+  //           </AdvancedMarker>
+  //         )}
+
+  //         {/* temporate pin */}
+  //         {newCafeLocation && (
+  //           <AdvancedMarker position={newCafeLocation}>
+  //             <Pin
+  //               background={"#EA4335"}
+  //               glyphColor={"#FFF"}
+  //               borderColor={"#B31412"}
+  //             />
+  //           </AdvancedMarker>
+  //         )}
+  //       </Map>
+
+  //       {/* floating botton */}
+  //       <button
+  //         onClick={() => {
+  //           setIsAddingMode(!isAddingMode);
+  //           setNewCafeLocation(null); // 重置之前的選擇
+  //           handleClose(); // 關閉任何開啟的 InfoWindow
+  //         }}
+  //         className={`absolute bottom-8 left-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all z-10 
+  //           ${
+  //             isAddingMode
+  //               ? "bg-red-500 text-white rotate-45"
+  //               : "bg-blue-600 text-white hover:bg-blue-700"
+  //           }`}
+  //       >
+  //         {/* 如果是新增模式顯示 X，否則顯示 + */}
+  //         <svg
+  //           xmlns="http://www.w3.org/2000/svg"
+  //           fill="none"
+  //           viewBox="0 0 24 24"
+  //           strokeWidth={2.5}
+  //           stroke="currentColor"
+  //           className="2-8 h-8"
+  //         >
+  //           <path
+  //             strokeLinecap="round"
+  //             strokeLinejoin="round"
+  //             d="M12 4.5v15m7.7-7.5h-15"
+  //           />
+  //         </svg>
+  //       </button>
+
+  //       {/* button of "using current position to add" */}
+  //       {isAddingMode && (
+  //         <button
+  //           onClick={handleUserCurrentLocation}
+  //           disabled={isLocating}
+  //           className="absolute bottom-24 left-4 bg-white text-gray-800 px-4 py-2 rounded-full shadow-lg flex items-center space-x-2 hover:bg-gray-100 transition z-10 font-medium"
+  //         >
+  //           {isLocating ? (
+  //             <span>📡 定位中...</span>
+  //           ) : (
+  //             <>
+  //               <span>📍</span>
+  //               <span>以目前位置新增</span>
+  //             </>
+  //           )}
+  //         </button>
+  //       )}
+
+  //       {isLoadingGoogle && (
+  //         <div className="absolute top-20 right-4 bg-white/90 px-3 py-1 rounded shadow text-xs font-medium text-gray-500 z-10 flex items-center gap-2">
+  //           <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+  //           搜尋附近...
+  //         </div>
+  //       )}
+
+  //       {isAddingMode && (
+  //         <div className="absolute top-24 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-semibold pointer-events-none z-10 whitespace-nowrap">
+  //           請點擊地圖新增
+  //         </div>
+  //       )}
+
+  //       {/* create new cafe form (only shows when coordinates exist) */}
+  //       {newCafeLocation && (
+  //         <CafeForm
+  //           coordinates={newCafeLocation}
+  //           existingTags={allTags}
+  //           onClose={() => setNewCafeLocation(null)}
+  //           onCafeAdded={() => {
+  //             fetchCafes(); // refetch all data of the cafes
+  //             setNewCafeLocation(null); // close the form
+  //           }}
+  //         />
+  //       )}
+  //     </div>
+  //   </APIProvider>
+  // );
+// }
 
 export default App;

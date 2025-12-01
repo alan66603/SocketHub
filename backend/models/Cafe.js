@@ -5,7 +5,7 @@ const cafeSchema = new mongoose.Schema(
     googlePlaceId: {
       type: String,
       unique: true,
-      sparse: true
+      sparse: true,
     },
 
     name: {
@@ -33,6 +33,9 @@ const cafeSchema = new mongoose.Schema(
     tags: [String],
 
     ratings: {
+      wifiStability: { type: Number, min: 0, max: 5, default: 0 },
+      wifiVoteCount: { type: Number, default: 0 },
+
       quietness: { type: Number, min: 0, max: 5, default: 0 },
       wifiStability: { type: Number, min: 0, max: 5, default: 0 },
       seatComfort: { type: Number, min: 0, max: 5, default: 0 },
@@ -40,7 +43,17 @@ const cafeSchema = new mongoose.Schema(
       seatAvailable: { type: Number, min: 0, max: 5, default: 0 },
       foodQuality: { type: Number, min: 0, max: 5, default: 0 },
       decorateStyle: { type: Number, min: 0, max: 5, default: 0 },
+
+      googleRating: Number,
+      googleRatingCount: Number,
     },
+
+    comments: [
+      {
+        text: String,
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
 
     features: {
       timeLimit: {
