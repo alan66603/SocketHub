@@ -65,7 +65,7 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
 
   return (
     // 遮罩層 (點擊背景關閉)
-    <div className="fixed inset-0 z-[60] flex justify-end">
+    <div className="fixed inset-0 z-[200] flex justify-end">
       <div 
         className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" 
         onClick={onClose}
@@ -90,12 +90,20 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
             <label className="block text-sm font-bold text-gray-700 mb-2">新增標籤 (Tag)</label>
             <input
               type="text"
+              list="tag-options"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
               className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="輸入標籤後按 Enter (例如: 有貓咪)"
+              placeholder="輸入標籤後按 Enter"
             />
+
+            <datalist id="tag-options">
+              {existingTags.map(tag =>(
+                <option key={tag} value={tag}/>
+              ))}
+            </datalist>
+
             {/* 已選 Tags */}
             <div className="flex flex-wrap gap-2 mt-3">
               {tags.map(t => (
@@ -104,12 +112,13 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
                 </span>
               ))}
             </div>
+
             {/* 建議 Tags */}
             {existingTags.length > 0 && (
                <div className="mt-3">
                   <p className="text-xs text-gray-400 mb-2">常用標籤：</p>
                   <div className="flex flex-wrap gap-2">
-                    {existingTags.slice(0,5).map(t => (
+                    {existingTags.filter(t => !tags.includes(t)).slice(0,10).map(t => (
                         <button key={t} type="button" onClick={() => handleAddTag(t)} className="text-xs border border-gray-200 hover:bg-gray-50 px-2 py-1 rounded-md text-gray-600">
                             + {t}
                         </button>

@@ -8,7 +8,6 @@ import {
   InfoWindow,
   useMap,
 } from "@vis.gl/react-google-maps";
-import CafeForm from "./components/CafeForm";
 import ContributePanel from "./components/ContributePanel";
 
 const socketMap = { many: "多", few: "少", none: "無" };
@@ -137,7 +136,6 @@ function App() {
     mode: null, // 'hover' or 'click'
   });
 
-  const [isAddingMode, setIsAddingMode] = useState(false);
   const [newCafeLocation, setNewCafeLocation] = useState(null);
   const [isLocating, setIsLocating] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
@@ -214,10 +212,10 @@ function App() {
 
   // mouse enter
   const handleMouseEnter = (cafe) => {
-    // 🛑 防呆 1：如果現在已經是「鎖定模式 (Click)」，且滑鼠指的正是同一家店，什麼都別做 (別干擾鎖定)
+    // 防呆 1：如果現在已經是「鎖定模式 (Click)」，且滑鼠指的正是同一家店，什麼都別做 (別干擾鎖定)
     if (activeState.mode === "click" && activeState.cafe?._id === cafe._id)
       return;
-    // 🛑 防呆 2：如果現在已經是「預覽模式 (Hover)」，且顯示的也是這家店，不要重置計時器 (解決滑鼠微動重置問題)
+    // 防呆 2：如果現在已經是「預覽模式 (Hover)」，且顯示的也是這家店，不要重置計時器 (解決滑鼠微動重置問題)
     if (activeState.mode === "hover" && activeState.cafe?._id === cafe._id)
       return;
     // 清除舊的計時器
@@ -233,7 +231,7 @@ function App() {
   const handleMouseLeave = () => {
     // if leave before 500 ms countdown, cancel the countdown
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    // 🛑 關鍵邏輯：只有在「預覽模式 (Hover)」下，移開滑鼠才要關閉視窗
+    // 只有在「預覽模式 (Hover)」下，移開滑鼠才要關閉視窗
     // 如果是「鎖定模式 (Click)」，移開滑鼠「不做任何事」，保持視窗開啟
     if (activeState.mode === "hover")
       setActiveState({ cafe: null, mode: null });
@@ -245,7 +243,6 @@ function App() {
 
   const handleClick = (cafe) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    if (isAddingMode) return;
     if (activeState.mode === "click" && activeState.cafe?._id === cafe._id) {
       handleClose();
     } else {
@@ -254,13 +251,7 @@ function App() {
   };
 
   const handleMapClick = (e) => {
-    // e.detail.latLng including the coordinate of clicked one
-    if (isAddingMode && e.detail.latLng) {
-      setNewCafeLocation(e.detail.latLng); // set the coordinate, activate CafeForm appears
-      setIsAddingMode(false);
-    } else {
       handleClose();
-    }
   };
 
   // function of receiving the current position of the user
@@ -275,8 +266,7 @@ function App() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        setNewCafeLocation({ lat: latitude, lng: longitude });
-        setIsAddingMode(false);
+        setUserLocation({ lat: latitude, lng: longitude });
         setIsLocating(false);
       },
       (error) => {
@@ -299,7 +289,7 @@ return (
           className="w-full h-full"
           onClick={handleMapClick}
           onIdle={handleMapIdle}
-          style={{ cursor: isAddingMode ? "crosshair" : "grab" }}
+          style={{ cursor: "grab" }}
           disableDefaultUI={true}
         >
           {/* ✨ 修正：只有在 Zoom >= 13 時才顯示圖釘 */}
@@ -392,68 +382,14 @@ return (
             </AdvancedMarker>
           )}
 
-          {newCafeLocation && (
-            <AdvancedMarker position={newCafeLocation}>
-              <Pin background={"#EA4335"} glyphColor={"#FFF"} borderColor={"#B31412"} />
-            </AdvancedMarker>
-          )}
         </Map>
 
         {/* 2. UI 層 (浮在地圖上面) */}
-        
         <TopBar 
           cafes={cafes} 
           onSelectCafe={(cafe) => setActiveState({ cafe, mode: "click" })}
           onUserLocationUpdate={(loc) => setUserLocation(loc)} 
         />
-
-        {/* 左下角常駐定位按鈕 */}
-        <button
-          onClick={handleUserCurrentLocation}
-          disabled={isLocating}
-          className="absolute bottom-24 left-4 w-12 h-12 bg-white rounded-full shadow-lg text-gray-600 flex items-center justify-center hover:bg-gray-50 z-50 transition border border-gray-100"
-          title="定位目前位置"
-        >
-           {isLocating ? (
-             <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-           ) : (
-             <span className="text-xl">📍</span>
-           )}
-        </button>
-
-        {/* FAB Buttons (新增按鈕) */}
-        <button
-          onClick={() => {
-            setIsAddingMode(!isAddingMode);
-            setNewCafeLocation(null);
-            handleClose();
-          }}
-          className={`absolute bottom-8 left-4 w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-all duration-300 z-50 
-            ${isAddingMode ? "bg-red-500 text-white rotate-45" : "bg-blue-600 text-white hover:bg-blue-700"}`}
-        >
-          {/* ✨ 修正 SVG class */}
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-8 h-8">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-        </button>
-        
-        {/* 新增模式下的「在此處新增」按鈕 */}
-        {isAddingMode && (
-          <button
-            onClick={() => {
-                // 如果已經定位過了 (userLocation 存在)，直接用它
-                if (userLocation) {
-                    setNewCafeLocation(userLocation);
-                    setIsAddingMode(false);
-                } else {
-                    handleUserCurrentLocation(); // 否則重新定位
-                }
-            }}
-            className="absolute bottom-24 left-20 bg-white text-gray-800 px-4 py-2 rounded-full shadow-lg flex items-center space-x-2 hover:bg-gray-100 transition z-50 font-medium border border-gray-100"
-          >
-            <span>📍</span><span>在此處新增</span>
-          </button>
-        )}
 
         {/* Loading Indicator */}
         {isLoadingGoogle && (
@@ -461,22 +397,6 @@ return (
             <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             搜尋附近...
           </div>
-        )}
-
-        {isAddingMode && (
-          <div className="absolute top-24 left-1/2 transform -translate-x-1/2 bg-gray-800/90 text-white px-4 py-2 rounded-full text-sm font-semibold pointer-events-none z-50 whitespace-nowrap shadow-lg backdrop-blur-sm">
-            請點擊地圖位置
-          </div>
-        )}
-
-        {/* 新增表單 */}
-        {newCafeLocation && (
-          <CafeForm 
-            coordinates={newCafeLocation} 
-            existingTags={allTags}
-            onClose={() => setNewCafeLocation(null)}
-            onCafeAdded={() => { fetchCafes(); setNewCafeLocation(null); }}
-          />
         )}
 
         {/* ✨ 編輯/貢獻側邊欄 */}

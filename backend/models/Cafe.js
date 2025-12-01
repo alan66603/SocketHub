@@ -58,14 +58,14 @@ const cafeSchema = new mongoose.Schema(
     features: {
       timeLimit: {
         type: String,
-        enum: ["limited", "unlimited"],
+        enum: ["limited", "unlimited", "unknown"],
         default: "limited",
       },
       singleDish: { type: Boolean, default: false },
       hasDessert: { type: Boolean, default: false },
       hasManySockets: {
         type: String,
-        enum: ["many", "few", "none"],
+        enum: ["many", "few", "none", "unknown"],
         default: "none",
       },
       hasMainMeal: { type: Boolean, default: false },
