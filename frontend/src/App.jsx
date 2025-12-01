@@ -77,7 +77,7 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
   };
 
   return (
-    <div className="absolute top-0 left-0 w-full z-50 pointer-events-none p-4 flex items-start justify-between">
+    <div className="absolute top-0 left-0 w-full z-[100] pointer-events-none p-4 flex items-start justify-between">
       {/* 搜尋區塊 */}
       <div className="pointer-events-auto flex items-center gap-4 w-full max-w-md bg-white shadow-lg rounded-full px-4 py-2">
         <h1 className="text-lg font-bold text-blue-600 hidden sm:block whitespace-nowrap mr-2">
@@ -114,7 +114,7 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
       <button
         onClick={handleLocateMe}
         disabled={isLocating}
-        className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition"
+        className={`pointer-events-auto cursor-pointer ml-2 flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition ${isLocating ? 'bg-blue-100 text-blue-600' : 'bg-white hover:bg-gray-100 text-gray-600'}`}
         title="回到目前位置"
       >
         {isLocating ? "..." : "📍"}
