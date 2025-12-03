@@ -8,6 +8,7 @@ import {
   InfoWindow,
   useMap,
 } from "@vis.gl/react-google-maps";
+import toast, {Toaster} from 'react-hot-toast';
 import ContributePanel from "./components/ContributePanel";
 import CafeDetailPanel from "./components/CafeDetailPanel";
 
@@ -53,7 +54,7 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
 
   // 定位到目前位置 (移動地圖中心)
   const handleLocateMe = () => {
-    if (!navigator.geolocation) return alert("不支援定位");
+    if (!navigator.geolocation) return toast.error("不支援定位");
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -70,7 +71,7 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
         setIsLocating(false);
       },
       () => {
-        alert("無法獲取位置");
+        toast.error("無法獲取位置");
         setIsLocating(false);
       }
     );
@@ -215,6 +216,7 @@ function App() {
       })
     }catch(error){
       console.error("Hybrid search error", error);
+      toast.error("無法取得附近店家資料");
     }finally{
       setIsLoadingGoogle(false);
     }
@@ -267,7 +269,7 @@ function App() {
   // function of receiving the current position of the user
   const handleUserCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("您的瀏覽器不支援地理定位功能");
+      toast.error("您的瀏覽器不支援地理定位功能");
       return;
     }
 
@@ -281,7 +283,7 @@ function App() {
       },
       (error) => {
         console.error("Error getting location: ", error);
-        alert("無法獲取您的位置，請確認瀏覽器權限，或改用點擊地圖新增。");
+        toast.error("無法獲取您的位置，請確認瀏覽器權限，或改用點擊地圖新增。");
         setIsLocating(false);
       }
     );
@@ -291,6 +293,19 @@ return (
     <APIProvider apiKey={API_KEY}>
       <div className="h-screen w-full relative">
         
+        <Toaster
+          position="bottom-left"
+          reverseOrder={false}
+          toastOptions={{
+            duration: 3000,
+            style:{
+              borderRadius: '10px',
+              background: '#333',
+              color: '#fff',
+            },
+          }}
+        />
+
         {/* 1. 地圖層 (最底層) */}
         <Map
           defaultCenter={defaultPosition}
@@ -426,7 +441,7 @@ return (
             onClose={() => setActiveCafeForContribution(null)}
             onCafeUpdated={() => {
                 setActiveCafeForContribution(null);
-                window.location.reload(); 
+                fetchCafes();
             }}
           />
         )}
@@ -440,20 +455,6 @@ return (
                 // 從詳情頁跳轉到編輯頁
                 setActiveCafeForContribution(activeCafeDetail);
                 setActiveCafeDetail(null); // 關閉詳情頁
-            }}
-          />
-        )}
-
-        {/* 貢獻面板 (保持不變，但記得要在 onCafeUpdated 裡做點事) */}
-        {activeCafeForContribution && (
-          <ContributePanel
-            cafe={activeCafeForContribution}
-            existingTags={allTags}
-            onClose={() => setActiveCafeForContribution(null)}
-            onCafeUpdated={() => {
-                setActiveCafeForContribution(null);
-                window.location.reload(); 
-                // fetchCafes();
             }}
           />
         )}

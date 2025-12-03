@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
   const API_URL =
@@ -30,19 +31,19 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
       if (!val) return;
 
       if (tags.length >= maxTagAmount) {
-        alert(`最多新增 ${maxTagAmount} 個標籤！`);
+        toast.error(`最多新增 ${maxTagAmount} 個標籤！`);
         return;
       }
 
       if (val.length < minTagLength) {
-        alert(`標籤太短了，請至少輸入 ${minTagLength} 個字!`);
+        toast.error(`標籤太短了，請至少輸入 ${minTagLength} 個字!`);
         return;
       }
 
       const validCharCount = (val.match(/[a-zA-Z\u4e00-\u9fa5]/g) || []).length;
 
       if (validCharCount < 2) {
-        alert("請包涵至少 2 個中英文字母！");
+        toast.error("請包含至少 2 個中英文字母！");
         return;
       }
 
@@ -50,7 +51,7 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
         setTags([...tags, val]);
         setTagInput("");
       } else {
-        alert("這個標籤已經有了哦！");
+        toast.error("這個標籤已經有了哦！");
         setTagInput("");
       }
     }
@@ -58,7 +59,7 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
 
   const handleAddTag = (tag) => {
     if (tags.length >= maxTagAmount) {
-      alert(`最多新增 ${maxTagAmount} 個標籤！`);
+      toast.error(`最多新增 ${maxTagAmount} 個標籤！`);
       return;
     }
     if (!tags.includes(tag)) setTags([...tags, tag]);
@@ -81,14 +82,20 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
       comment: comment,
     };
 
+    const postPromise = axios.post(POST_URL, payload);
+
+    toast.promise(postPromise, {
+      loading: '正在提交貢獻...',
+      success: '感謝您的貢獻！資料已更新 🎉',
+      error: '提交失敗，請稍後再試',
+    });
+
     try {
-      await axios.post(POST_URL, payload);
-      alert("感謝您的貢獻！資料已更新 🎉");
+      await postPromise;
       onCafeUpdated(); // 通知 App 刷新
       onClose();
     } catch (error) {
       console.error(error);
-      alert("提交失敗，請稍後再試");
     } finally {
       setIsSubmitting(false);
     }
