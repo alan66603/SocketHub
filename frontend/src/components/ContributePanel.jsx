@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api/cafes";
+  const API_URL =
+    import.meta.env.VITE_API_URL || "http://localhost:8080/api/cafes";
   const isDev = import.meta.env.DEV;
   // 修正 API URL 判斷 (確保本地開發連 localhost)
-  const POST_URL = isDev 
-    ? "http://localhost:8080/api/cafes/contribute" 
-    : `${import.meta.env.VITE_API_URL.replace('/search', '')}/contribute`;
+  const POST_URL = isDev
+    ? "http://localhost:8080/api/cafes/contribute"
+    : `${import.meta.env.VITE_API_URL.replace("/search", "")}/contribute`;
 
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState([]);
@@ -17,19 +18,49 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const maxTagAmount = 5;
+  const minTagLength = 3;
+
   // 處理 Tag 輸入
   const handleTagKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       const val = tagInput.trim();
+
+      if (!val) return;
+
+      if (tags.length >= maxTagAmount) {
+        alert(`最多新增 ${maxTagAmount} 個標籤！`);
+        return;
+      }
+
+      if (val.length < minTagLength) {
+        alert(`標籤太短了，請至少輸入 ${minTagLength} 個字!`);
+        return;
+      }
+
+      const validCharCount = (val.match(/[a-zA-Z\u4e00-\u9fa5]/g) || []).length;
+
+      if (validCharCount < 2) {
+        alert("請包涵至少 2 個中英文字母！");
+        return;
+      }
+
       if (val && !tags.includes(val) && !cafe.tags?.includes(val)) {
         setTags([...tags, val]);
+        setTagInput("");
+      } else {
+        alert("這個標籤已經有了哦！");
         setTagInput("");
       }
     }
   };
 
   const handleAddTag = (tag) => {
+    if (tags.length >= maxTagAmount) {
+      alert(`最多新增 ${maxTagAmount} 個標籤！`);
+      return;
+    }
     if (!tags.includes(tag)) setTags([...tags, tag]);
   };
 
@@ -47,7 +78,7 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
       wifiRating: wifi > 0 ? wifi : null,
       socketStatus: socket,
       timeStatus: time,
-      comment: comment
+      comment: comment,
     };
 
     try {
@@ -66,8 +97,8 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
   return (
     // 遮罩層 (點擊背景關閉)
     <div className="fixed inset-0 z-[200] flex justify-end">
-      <div 
-        className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" 
+      <div
+        className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       ></div>
 
@@ -76,18 +107,24 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
         <div className="flex justify-between items-center mb-6 border-b pb-4">
           <div>
             <h2 className="text-xl font-bold text-gray-800">📝 貢獻資訊</h2>
-            <p className="text-sm text-blue-600 font-medium mt-1">{cafe.name}</p>
+            <p className="text-sm text-blue-600 font-medium mt-1">
+              {cafe.name}
+            </p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-full text-gray-500"
+          >
             ✕
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          
           {/* Tags */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">新增標籤 (Tag)</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              新增標籤 (Tag)
+            </label>
             <input
               type="text"
               list="tag-options"
@@ -100,78 +137,117 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
             />
 
             <datalist id="tag-options">
-              {existingTags.map(tag =>(
-                <option key={tag} value={tag}/>
+              {existingTags.map((tag) => (
+                <option key={tag} value={tag} />
               ))}
             </datalist>
 
             {/* 已選 Tags */}
             <div className="flex flex-wrap gap-2 mt-3">
-              {tags.map(t => (
-                <span key={t} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
-                  #{t} <button type="button" onClick={() => setTags(tags.filter(x => x !== t))} className="hover:text-blue-900">×</button>
+              {tags.map((t) => (
+                <span
+                  key={t}
+                  className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1"
+                >
+                  #{t}{" "}
+                  <button
+                    type="button"
+                    onClick={() => setTags(tags.filter((x) => x !== t))}
+                    className="hover:text-blue-900"
+                  >
+                    ×
+                  </button>
                 </span>
               ))}
             </div>
 
             {/* 建議 Tags */}
             {existingTags.length > 0 && (
-               <div className="mt-3">
-                  <p className="text-xs text-gray-400 mb-2">常用標籤：</p>
-                  <div className="flex flex-wrap gap-2">
-                    {existingTags.filter(t => !tags.includes(t)).slice(0,10).map(t => (
-                        <button key={t} type="button" onClick={() => handleAddTag(t)} className="text-xs border border-gray-200 hover:bg-gray-50 px-2 py-1 rounded-md text-gray-600">
-                            + {t}
-                        </button>
+              <div className="mt-3">
+                <p className="text-xs text-gray-400 mb-2">常用標籤：</p>
+                <div className="flex flex-wrap gap-2">
+                  {existingTags
+                    .filter((t) => !tags.includes(t))
+                    .slice(0, 10)
+                    .map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => handleAddTag(t)}
+                        className="text-xs border border-gray-200 hover:bg-gray-50 px-2 py-1 rounded-md text-gray-600"
+                      >
+                        + {t}
+                      </button>
                     ))}
-                  </div>
-               </div>
+                </div>
+              </div>
             )}
           </div>
 
           {/* WiFi */}
           <div className="bg-gray-50 p-4 rounded-lg">
-            <label className="block text-sm font-bold text-gray-700 mb-2">WiFi 穩定度 (不評分請留 0)</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              WiFi 穩定度 (不評分請留 0)
+            </label>
             <div className="flex items-center gap-4">
-              <input 
-                type="range" min="0" max="5" step="0.5" 
-                value={wifi} 
-                onChange={(e) => setWifi(e.target.value)} 
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="0.5"
+                value={wifi}
+                onChange={(e) => setWifi(e.target.value)}
                 className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
               />
-              <span className="text-lg font-bold text-blue-600 w-8 text-right">{wifi > 0 ? wifi : '-'}</span>
+              <span className="text-lg font-bold text-blue-600 w-8 text-right">
+                {wifi > 0 ? wifi : "-"}
+              </span>
             </div>
           </div>
 
           {/* 插座 & 限時 */}
           <div className="grid grid-cols-2 gap-4">
-              <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">插座數量</label>
-                  <select value={socket} onChange={e => setSocket(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2.5 bg-white">
-                      <option value="unknown">不更新</option>
-                      <option value="many">很多</option>
-                      <option value="few">少量</option>
-                      <option value="none">沒有</option>
-                  </select>
-              </div>
-              <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">限時狀況</label>
-                  <select value={time} onChange={e => setTime(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2.5 bg-white">
-                      <option value="unknown">不更新</option>
-                      <option value="limited">限時</option>
-                      <option value="unlimited">不限時</option>
-                  </select>
-              </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                插座數量
+              </label>
+              <select
+                value={socket}
+                onChange={(e) => setSocket(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-2.5 bg-white"
+              >
+                <option value="unknown">不更新</option>
+                <option value="many">很多</option>
+                <option value="few">少量</option>
+                <option value="none">沒有</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                限時狀況
+              </label>
+              <select
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-2.5 bg-white"
+              >
+                <option value="unknown">不更新</option>
+                <option value="limited">限時</option>
+                <option value="unlimited">不限時</option>
+              </select>
+            </div>
           </div>
 
           {/* 評論 */}
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">留言評論</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              留言評論
+            </label>
             <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm h-28 resize-none focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="分享一下這裡的環境、咖啡好不好喝..."
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-3 text-sm h-28 resize-none focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="分享一下這裡的環境、咖啡好不好喝..."
             />
           </div>
 
@@ -185,7 +261,6 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
               {isSubmitting ? "提交中..." : "確認貢獻"}
             </button>
           </div>
-
         </form>
       </div>
     </div>
