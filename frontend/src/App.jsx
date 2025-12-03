@@ -9,6 +9,7 @@ import {
   useMap,
 } from "@vis.gl/react-google-maps";
 import ContributePanel from "./components/ContributePanel";
+import CafeDetailPanel from "./components/CafeDetailPanel";
 
 const socketMap = { many: "多", few: "少", none: "無" };
 const timeLimitMap = { limited: "⏳ 限時", unlimited: "✅ 不限時" };
@@ -145,6 +146,8 @@ function App() {
   const hoverTimeoutRef = useRef(null);
 
   const [activeCafeForContribution, setActiveCafeForContribution] = useState(null);  // control the display of sidebar
+  const [activeCafeDetail, setActiveCafeDetail] = useState(null);
+
   const [currentZoom, setCurrentZoom] = useState(13);
 
   const allTags = useMemo(() => {
@@ -325,9 +328,9 @@ return (
                minWidth={200}
                pixelOffset={[0, -30]}
              >
-                {/* ✨ 優化：限制最大寬度 */}
-                <div className="p-1 max-w-[220px]">
-                 <div className="flex items-center gap-2 mb-2">
+                {/* 優化：限制最大寬度 */}
+                <div className="p-1 max-w-[280px]">
+                 <div className="flex items-center gap-2">
                     <h2 className="text-base font-bold text-gray-800 line-clamp-1">{activeState.cafe.name}</h2>
                     {activeState.cafe.source === 'google' && (
                         <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 rounded-full border border-blue-200 whitespace-nowrap">Google</span>
@@ -361,16 +364,28 @@ return (
                         "{activeState.cafe.comments[activeState.cafe.comments.length - 1].text}"
                       </div>
                    )}
+                   
+                   <div className="mt-3 flex items-center gap-2">
+                      <button
+                      onClick={() => {
+                          setActiveCafeDetail(activeState.cafe); // 打開詳細頁
+                          handleClose(); 
+                      }}
+                      className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 py-1.5 rounded text-xs font-bold transition"
+                    >
+                      更多資訊
+                    </button>
 
-                   <button
-                     onClick={() => {
-                        setActiveCafeForContribution(activeState.cafe); // 打開側邊欄
-                        handleClose(); 
-                     }}
-                     className="mt-3 w-full bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 py-1.5 rounded text-xs font-bold transition flex items-center justify-center gap-1"
-                   >
-                     <span>✍️</span> 貢獻 / 編輯
-                   </button>
+                    <button
+                      onClick={() => {
+                          setActiveCafeForContribution(activeState.cafe); // 打開側邊欄
+                          handleClose(); 
+                      }}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded text-xs font-bold transition"
+                    >
+                      ✍️ 貢獻
+                    </button>
+                   </div>
                  </div>
                </div>
              </InfoWindow>
@@ -400,6 +415,32 @@ return (
         )}
 
         {/* ✨ 編輯/貢獻側邊欄 */}
+        {activeCafeForContribution && (
+          <ContributePanel
+            cafe={activeCafeForContribution}
+            existingTags={allTags}
+            onClose={() => setActiveCafeForContribution(null)}
+            onCafeUpdated={() => {
+                setActiveCafeForContribution(null);
+                window.location.reload(); 
+            }}
+          />
+        )}
+
+        {/* ✨ 渲染：詳細資料面板 */}
+        {activeCafeDetail && (
+          <CafeDetailPanel
+            cafe={activeCafeDetail}
+            onClose={() => setActiveCafeDetail(null)}
+            onEdit={() => {
+                // 從詳情頁跳轉到編輯頁
+                setActiveCafeForContribution(activeCafeDetail);
+                setActiveCafeDetail(null); // 關閉詳情頁
+            }}
+          />
+        )}
+
+        {/* 貢獻面板 (保持不變，但記得要在 onCafeUpdated 裡做點事) */}
         {activeCafeForContribution && (
           <ContributePanel
             cafe={activeCafeForContribution}
