@@ -36,9 +36,6 @@ function CafeDetailPanel({ cafe, onClose, onEdit }) {
             </button>
             <div className="absolute bottom-4 left-6 text-white">
                 <h2 className="text-2xl font-bold drop-shadow-md">{cafe.name}</h2>
-                {cafe.source === 'google' && (
-                    <span className="text-xs bg-white/20 px-2 py-1 rounded border border-white/30 backdrop-blur-md">Google 資料</span>
-                )}
             </div>
         </div>
 
@@ -56,7 +53,7 @@ function CafeDetailPanel({ cafe, onClose, onEdit }) {
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">標籤</h3>
                 <div className="flex flex-wrap gap-2">
                     {cafe.tags && cafe.tags.length > 0 ? (
-                        cafe.tags.map(tag => (
+                        cafe.tags.slice(0, 8).map(tag => (
                             <span key={tag} className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
                                 #{tag}
                             </span>

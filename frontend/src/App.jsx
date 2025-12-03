@@ -130,6 +130,9 @@ function App() {
   ? "http://localhost:8080/api/cafes"
   : import.meta.env.VITE_API_URL;
 
+  const savedMapState = JSON.parse(localStorage.getItem("socketHubMapState"));
+  const defaultZoomLevel = savedMapState?.zoom || 13;
+
   // 1. define State: used to store the data of cafe from the backend
   const [cafes, setCafes] = useState([]);
   const [activeState, setActiveState] = useState({
@@ -148,7 +151,7 @@ function App() {
   const [activeCafeForContribution, setActiveCafeForContribution] = useState(null);  // control the display of sidebar
   const [activeCafeDetail, setActiveCafeDetail] = useState(null);
 
-  const [currentZoom, setCurrentZoom] = useState(13);
+  const [currentZoom, setCurrentZoom] = useState(defaultZoomLevel);
 
   const allTags = useMemo(() => {
     const tags = new Set();
@@ -176,12 +179,17 @@ function App() {
   const handleMapIdle = async (mapEvent) => {
     const map = mapEvent.map;
     const zoom = map.getZoom();
+    const center = map.getCenter();
+
+    localStorage.setItem("socketHubMapState", JSON.stringify({
+      center: {lat: center.lat(), lng: center.lng()},
+      zoom: zoom
+    }));
 
     setCurrentZoom(zoom);
     // cost effeciency: no searching if zoom out too much
     if(zoom < 13) return;
 
-    const center = map.getCenter();
     const lat = center.lat();
     const lng = center.lng();
 
@@ -287,7 +295,7 @@ return (
         {/* 1. 地圖層 (最底層) */}
         <Map
           defaultCenter={defaultPosition}
-          defaultZoom={13}
+          defaultZoom={defaultZoomLevel}
           mapId="DEMO_MAP_ID"
           className="w-full h-full"
           onClick={handleMapClick}
@@ -332,9 +340,6 @@ return (
                 <div className="p-1 max-w-[280px]">
                  <div className="flex items-center gap-2">
                     <h2 className="text-base font-bold text-gray-800 line-clamp-1">{activeState.cafe.name}</h2>
-                    {activeState.cafe.source === 'google' && (
-                        <span className="text-[10px] bg-blue-100 text-blue-600 px-1.5 rounded-full border border-blue-200 whitespace-nowrap">Google</span>
-                    )}
                  </div>
                  
                  <div className="text-sm text-gray-600 space-y-1.5">
@@ -449,6 +454,7 @@ return (
             onCafeUpdated={() => {
                 setActiveCafeForContribution(null);
                 window.location.reload(); 
+                // fetchCafes();
             }}
           />
         )}

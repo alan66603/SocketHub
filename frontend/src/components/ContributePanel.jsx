@@ -92,10 +92,11 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
               type="text"
               list="tag-options"
               value={tagInput}
+              maxLength={8}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
               className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="輸入標籤後按 Enter"
+              placeholder="輸入標籤後按 Enter (最多8字)"
             />
 
             <datalist id="tag-options">
