@@ -14,13 +14,13 @@ app.use(express.json()); // 解析 JSON 格式的 Request Body
 // --- 2. Connect to database ---
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("🔥 MongoDB 連線成功 (Server)"))
-  .catch((err) => console.error("❌ 連線失敗:", err));
+  .then(() => console.log("MongoDB connect successfully (Server)"))
+  .catch((err) => console.error("Failed to connect:", err));
 
 app.use("/api/cafes", cafeRoutes);
 
 // --- 4. activate the server ---
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`👉 Test URL: http://localhost:${PORT}/api/cafes`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Test URL: http://localhost:${PORT}/api/cafes`);
 });

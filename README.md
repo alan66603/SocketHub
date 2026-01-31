@@ -1,44 +1,51 @@
 # SocketHub ☕
-Find your next coding spot. SocketHub 是一個專為數位遊牧民族、學生與遠端工作者打造的咖啡廳地圖應用。結合 Google Maps 的廣大資料庫與社群貢獻的詳細資訊，幫你快速找到有插座、WiFi 穩定且適合工作的理想據點。
+**Find your next coding spot.**
 
-## 主要功能 (Features)
-* 混合搜尋引擎 (Hybrid Search Engine)
-  * 結合 Google Places API 的即時資料與 本地社群資料庫 (MongoDB)
-  * 支援地圖拖曳搜尋與關鍵字搜尋
-* AI 智慧資料整合 (AI-Powered Data Reconciliation)
-  * 使用 Google Gemini AI 自動比對並合併重複的店家資料，解決 Google 資料與使用者建立資料衝突的問題
-* 社群貢獻系統 (Crowdsourcing)
-  * 使用者可即時回報 WiFi 穩定度、插座數量、限時狀況
-  * 支援自定義 標籤 (Tags) 系統（如：#安靜、#適合讀書）
-* 現代化使用者介面
-  * 響應式側邊欄設計 (Sidebar Interface)
-  * 直覺的互動式地圖體驗
+SocketHub is a comprehensive cafe map application designed specifically for digital nomads, students, and remote workers. By combining the vast database of Google Maps with community-contributed details, it helps you quickly locate the ideal workspace with reliable WiFi, ample power outlets, and the right atmosphere.
+
+![Project Status](https://img.shields.io/badge/Status-Development-blue) ![License](https://img.shields.io/badge/License-MIT-green)
+
+## Key Features
+* **Hybrid Search Engine**
+  * Seamlessly integrates real-time data from the **Google Places API** with our **Local Community Database (MongoDB)**.
+  * Supports both interactive map-drag search and keyword queries.
+* **AI-Powered Data Reconciliation**
+  * Real-time reporting for **WiFi speed**, **Socket availability**, and **Time limits**.
+  * Custom **Tagging System** (e.g., #Quiet, #GoodForMeetings).
+* **Community Crowdsourcing**
+  * Real-time reporting for **WiFi speed**, **Socket availability**, and **Time limits**.
+  * Custom **Tagging System** (e.g., #Quiet, #GoodForMeetings).
+* **Modern User Interface**
+  * Responsive Sidebar Interface.
+  * Smooth, interactive map experience with dynamic loading.
 
 ## Tech Stack
-### Frontend (前端)
+
+### Frontend
 * **Core**: [React](https://react.dev/) (Vite)
 * **Styling**: [Tailwind CSS](https://tailwindcss.com/) (v3.4)
 * **Maps**: Google Maps JavaScript API (@vis.gl/react-google-maps)
 * **UI Components**: React Hot Toast (Notifications)
 
-### Backend (後端)
+### Backend
 * **Runtime**: [Node.js](https://nodejs.org/)
 * **Framework**: [Express.js](https://expressjs.com/)
 * **Database**: [MongoDB](https://www.mongodb.com/) (Mongoose)
 * **AI Intergration**: [Google Generative AI SDK](https://ai.google.dev/) (`Gemini-2.5-flash-lite`)
 
 ## Getting Started
-請依照以下步驟在你的本機環境啟動專案。
 
-### 1. 環境需求 (Prerequisites)
+Follow these steps to set up the project locally.
+
+### 1. Prerequisites
 * Node.js (v18+)
-* MongoDB Atlas 帳號 (或本機 MongoDB)
-* Google Cloud Platform 帳號 (需啟用 Maps JavaScript API, Places API & Gemini API)
+* MongoDB Atlas account (or local MongoDB instance)
+* Google Cloud Platform account (Maps JavaScript API, Places API & Gemini API enabled)
 
-### 2. 安裝依賴 (Installation)
+### 2. Installation
 ```
-# 1. Clone 專案
-git clone https://github.com/你的帳號/SocketHub.git
+# 1. Clone repository
+git clone https://github.com/your-username/SocketHub.git
 cd SocketHub
 ```
 ```
@@ -52,3 +59,49 @@ cd frontend
 npm install
 ```
 
+### 3. Environment Variables
+Create a `.env` file in both the `backend` and `frontend` directories.
+
+**Backend (backend/.env):**
+```
+PORT=8080
+MONGO_URI=your_mongodb_connection_string
+GOOGLE_MAPS_API_KEY=your_google_maps_server_key
+GEMINI_API_KEY=your_google_gemini_api_key
+```
+
+**Frontend(frontend/.env):**
+```
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_client_key
+VITE_API_URL=http://localhost:8080/api/cafes
+```
+
+### 4. Running the App
+It is recommended to run the frontend and backend in seperate terminal windows.
+```
+cd backend
+node server.js
+
+cd frontend
+npm run dev
+```
+
+### Project Structure
+
+```
+SocketHub/
+├── backend/             # Node.js + Express Backend
+│   ├── controllers/     # Request logic
+│   ├── models/          # MongoDB Schemas
+│   ├── routes/          # API Routes
+│   ├── services/        # Business Logic (AI, Search)
+│   └── server.js        # Entry point
+│
+├── frontend/            # React + Vite Frontend
+│   ├── src/
+│   │   ├── components/  # UI Components
+│   │   └── App.jsx      # Main Application
+│   └── tailwind.config.js
+│
+└── README.md
+```
