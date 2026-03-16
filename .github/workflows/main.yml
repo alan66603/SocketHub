@@ -63,7 +63,7 @@ jobs:
           docker run -d \
             --name ${{ env.CONTAINER_NAME }} \
             -p 3000:8080 \
-            -e MONGODB_URI="${{ secrets.MONGO_URI }}" \
+            -e MONGO_URI="${{ secrets.MONGO_URI }}" \
             -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
             -e GOOGLE_MAPS_API_KEY="${{ secrets.GOOGLE_MAPS_API_KEY }}" \
             --restart always \
