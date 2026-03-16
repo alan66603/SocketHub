@@ -1,0 +1,38 @@
+{
+    "name": "小公寓Apt.cafe",
+    "location": {
+        "type": "Point",
+        "coordinates": [121.57544396793462, 24.987906917303558],
+        "address": "2樓, No. 56號指南路二段文山區臺北市116",
+        "city": "臺北市",
+        "district": "文山區"
+    },
+    "tags": ["有插座", "有貓咪", "近公車站"],
+    "ratings": {
+        "quietness": 3.0,
+        "wifiStability": 4.5,
+        "seatComfort": 4.0,
+        "costPerformance": 4.0,
+        "seatAvailable": 3.0,
+        "foodQuality": 5.0,
+        "decorateStyle": 4.0
+    },
+    "features": {
+        "timeLimit": "unlimited",
+        "singleDish": false,
+        "hasDessert": true,
+        "hasManySockets": "many",
+        "hasMainMeal": true,
+        "isStandingFriendly": false
+    },
+    "openingTime": {
+        "Mon": "11:00 - 21:00",
+        "Tue": "11:00 - 21:00",
+        "Wed": "11:00 - 21:00",
+        "Thu": "11:00 - 21:00",
+        "Fri": "11:00 - 21:00",
+        "Sat": "11:00 - 21:00",
+        "Sun": "11:00 - 21:00"
+    },
+    "lastUpdated": "2025-11-24T07:00:00Z"
+}
