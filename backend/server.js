@@ -17,6 +17,13 @@ mongoose
   .then(() => console.log("MongoDB connect successfully (Server)"))
   .catch((err) => console.error("Failed to connect:", err));
 
+app.get('/', (req, res) => {
+  res.json({
+    message: "SocketHub Backend is running!",
+    endpoints: ["/api/cafes"]
+  });
+});
+
 app.use("/api/cafes", cafeRoutes);
 
 // --- 4. activate the server ---
