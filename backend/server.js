@@ -7,7 +7,7 @@ const cafeRoutes = require("./routes/CafeRoutes");
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-// --- 1. Middleware (中間件) 設定 ---
+// --- 1. Middleware Setting---
 app.use(cors()); // 允許跨域請求 (讓 React 可以連線)
 app.use(express.json()); // 解析 JSON 格式的 Request Body
 
