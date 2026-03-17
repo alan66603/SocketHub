@@ -105,3 +105,7 @@ SocketHub/
 │
 └── README.md
 ```
+
+## Infrastructure
+AWS EC2: Dynamic, for Node.js and API computing
+AWS S3 + CloudFront: Static, for React static web page
