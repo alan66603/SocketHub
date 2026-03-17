@@ -20,6 +20,29 @@ resource "aws_cloudfront_origin_access_control" "oac" {
   signing_protocol                  = "sigv4"
 }
 
+resource "aws_s3_bucket_policy" "cdn_oac_policy" {
+  bucket = aws_s3_bucket.web_bucket.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = "s3:GetObject"
+        Effect   = "Allow"
+        Resource = "${aws_s3_bucket.web_bucket.arn}/*"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Condition = {
+          StringEquals = {
+            # Security check
+            "AWS:SourceArn" = aws_cloudfront_distribution.cdn.arn
+          }
+        }
+      }
+    ]
+  })
+}
+
 # Build CloudFront Distribution (CDN)
 resource "aws_cloudfront_distribution" "cdn" {
   origin {
