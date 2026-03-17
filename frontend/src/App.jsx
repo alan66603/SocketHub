@@ -129,9 +129,10 @@ function App() {
   const defaultPosition = savedMapState?.center || { lat: 25.033, lng: 121.5654 }; // Taipei 101
   const defaultZoomLevel = savedMapState?.zoom || 13;
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const API_URL = import.meta.env.DEV 
-  ? "http://localhost:8080/api/cafes"
-  : import.meta.env.VITE_API_URL;
+  // const API_URL = import.meta.env.DEV 
+  // ? "http://localhost:8080/api/cafes"
+  // : import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL || "/api/cafes";
 
   // 1. define State: used to store the data of cafe from the backend
   const [cafes, setCafes] = useState([]);
@@ -168,8 +169,19 @@ function App() {
   const fetchCafes = () => {
     axios
       .get(API_URL)
-      .then((res) => setCafes(res.data))
-      .catch((err) => console.error(err));
+      .then((res) => {
+        // Only update when the data is an array
+        if (Array.isArray(res.data)) {
+          setCafes(res.data);
+        } else {
+          console.error("接收到的資料不是陣列:", res.data);
+          setCafes([]);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error("後端連線失敗");
+      });
   };
 
   useEffect(() => {

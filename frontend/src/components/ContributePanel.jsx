@@ -4,12 +4,14 @@ import toast from "react-hot-toast";
 
 function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
   const API_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:8080/api/cafes";
+    // import.meta.env.VITE_API_URL || "http://localhost:8080/api/cafes";
+    import.meta.env.VITE_API_URL || "/api/cafes";
   const isDev = import.meta.env.DEV;
   // 修正 API URL 判斷 (確保本地開發連 localhost)
-  const POST_URL = isDev
-    ? "http://localhost:8080/api/cafes/contribute"
-    : `${import.meta.env.VITE_API_URL.replace("/search", "")}/contribute`;
+  // const POST_URL = isDev
+  //   ? "http://localhost:8080/api/cafes/contribute"
+  //   : `${import.meta.env.VITE_API_URL.replace("/search", "")}/contribute`;
+  const POST_URL = `${API_URL}/contribute`;
 
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState([]);
