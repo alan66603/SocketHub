@@ -42,6 +42,12 @@ resource "aws_s3_bucket_policy" "cdn_oac_policy" {
     ]
   })
 }
+data "aws_instance" "backend_server" {
+  filter {
+    name   = "tag:Name"
+    values = ["SocketHub-Server"]
+  }
+}
 
 # Build CloudFront Distribution (CDN)
 resource "aws_cloudfront_distribution" "cdn" {
@@ -59,6 +65,40 @@ resource "aws_cloudfront_distribution" "cdn" {
     error_code         = 404
     response_code      = 200
     response_page_path = "/index.html"
+  }
+
+  # --- Add EC2 backend source ---
+  origin {
+    domain_name = data.aws_instance.backend_server.public_dns # EC2 public dns
+    origin_id   = "EC2-Backend"
+
+    custom_origin_config {
+      http_port              = 3000
+      https_port             = 443
+      origin_protocol_policy = "http-only" # HTTPS -> HTTP
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+  }
+
+  # --- Add routing policy：if it's /api/* then direct to EC2 ---
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    target_origin_id = "EC2-Backend"
+
+    allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods   = ["GET", "HEAD"]
+
+    forwarded_values {
+      query_string = true
+      cookies {
+        forward = "all"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
   }
 
   default_cache_behavior {
