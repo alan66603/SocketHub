@@ -3,6 +3,8 @@ name: Deploy SocketHub to Amazon EC2
 on:
   push:
     branches: [ "main" ] # activates when code is merged to main
+    paths:
+      - 'backend/**' # Acticated only when changes in ./backend
 
 env:
   AWS_REGION: ap-southeast-2
