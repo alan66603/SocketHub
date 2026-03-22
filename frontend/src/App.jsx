@@ -8,14 +8,14 @@ import {
   InfoWindow,
 } from "@vis.gl/react-google-maps";
 import toast, { Toaster } from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import ContributePanel from "./components/ContributePanel";
 import CafeDetailPanel from "./components/CafeDetailPanel";
 import TopBar from "./components/TopBar";
 
-const socketMap = { many: "多", few: "少", none: "無" };
-const timeLimitMap = { limited: "⏳ 限時", unlimited: "✅ 不限時" };
-
 function App() {
+  const { t } = useTranslation();
+
   let savedMapState = null;
   try {
     savedMapState = JSON.parse(localStorage.getItem("socketHubMapState"));
@@ -30,6 +30,16 @@ function App() {
   const defaultZoomLevel = savedMapState?.zoom || 13;
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const API_URL = import.meta.env.VITE_API_URL || "/api/cafes";
+
+  const socketMap = {
+    many: t("socket_many"),
+    few: t("socket_few"),
+    none: t("socket_none"),
+  };
+  const timeLimitMap = {
+    limited: t("time_limited"),
+    unlimited: t("time_unlimited"),
+  };
 
   const [cafes, setCafes] = useState([]);
   const [activeState, setActiveState] = useState({ cafe: null, mode: null });
@@ -66,7 +76,7 @@ function App() {
       })
       .catch((err) => {
         console.error(err);
-        toast.error("後端連線失敗");
+        toast.error(t("backend_error"));
       });
   };
 
@@ -119,7 +129,7 @@ function App() {
         });
       } catch (error) {
         console.error("Hybrid search error", error);
-        toast.error("無法取得附近店家資料");
+        toast.error(t("nearby_error"));
       } finally {
         setIsLoadingGoogle(false);
       }
@@ -218,11 +228,9 @@ function App() {
               pixelOffset={[0, -30]}
             >
               <div className="p-1 max-w-[280px]">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-base font-bold text-gray-800 line-clamp-1">
-                    {activeState.cafe.name}
-                  </h2>
-                </div>
+                <h2 className="text-base font-bold text-gray-800 line-clamp-1 mb-1">
+                  {activeState.cafe.name}
+                </h2>
 
                 <div className="text-sm text-gray-600 space-y-1.5">
                   <p className="flex items-start gap-1">
@@ -252,17 +260,15 @@ function App() {
                       </span>
                     </p>
                     <p>
-                      🔌 插座:{" "}
+                      🔌 {t("outlets")}:{" "}
                       <span className="font-medium text-gray-800">
-                        {socketMap[activeState.cafe.features.hasManySockets] ||
-                          "-"}
+                        {socketMap[activeState.cafe.features.hasManySockets] || "-"}
                       </span>
                     </p>
                     <p>
-                      ⏳ 限時:{" "}
+                      ⏳ {t("time_limit")}:{" "}
                       <span className="font-medium text-gray-800">
-                        {timeLimitMap[activeState.cafe.features.timeLimit] ||
-                          "-"}
+                        {timeLimitMap[activeState.cafe.features.timeLimit] || "-"}
                       </span>
                     </p>
                     {activeState.cafe.source === "google" && (
@@ -296,7 +302,7 @@ function App() {
                       }}
                       className="flex-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 py-1.5 rounded text-xs font-bold transition"
                     >
-                      更多資訊
+                      {t("more_info")}
                     </button>
                     <button
                       onClick={() => {
@@ -305,7 +311,7 @@ function App() {
                       }}
                       className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded text-xs font-bold transition"
                     >
-                      ✍️ 貢獻
+                      ✍️ {t("contribute")}
                     </button>
                   </div>
                 </div>
@@ -333,7 +339,7 @@ function App() {
         {isLoadingGoogle && (
           <div className="absolute top-20 right-4 bg-white/90 px-3 py-1 rounded-full shadow text-xs font-medium text-gray-500 z-50 flex items-center gap-2 border border-gray-100">
             <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            搜尋附近...
+            {t("searching_nearby")}
           </div>
         )}
 

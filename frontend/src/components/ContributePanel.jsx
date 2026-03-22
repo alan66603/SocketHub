@@ -1,8 +1,10 @@
 import { useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
+  const { t } = useTranslation();
   const API_URL = import.meta.env.VITE_API_URL || "/api/cafes";
   const POST_URL = `${API_URL}/contribute`;
 
@@ -17,7 +19,6 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
   const maxTagAmount = 5;
   const minTagLength = 3;
 
-  // 處理 Tag 輸入
   const handleTagKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -26,19 +27,18 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
       if (!val) return;
 
       if (tags.length >= maxTagAmount) {
-        toast.error(`最多新增 ${maxTagAmount} 個標籤！`);
+        toast.error(t("tag_max_error", { count: maxTagAmount }));
         return;
       }
 
       if (val.length < minTagLength) {
-        toast.error(`標籤太短了，請至少輸入 ${minTagLength} 個字!`);
+        toast.error(t("tag_too_short", { count: minTagLength }));
         return;
       }
 
       const validCharCount = (val.match(/[a-zA-Z\u4e00-\u9fa5]/g) || []).length;
-
       if (validCharCount < 2) {
-        toast.error("請包含至少 2 個中英文字母！");
+        toast.error(t("tag_invalid_chars"));
         return;
       }
 
@@ -46,7 +46,7 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
         setTags([...tags, val]);
         setTagInput("");
       } else {
-        toast.error("這個標籤已經有了哦！");
+        toast.error(t("tag_duplicate"));
         setTagInput("");
       }
     }
@@ -54,7 +54,7 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
 
   const handleAddTag = (tag) => {
     if (tags.length >= maxTagAmount) {
-      toast.error(`最多新增 ${maxTagAmount} 個標籤！`);
+      toast.error(t("tag_max_error", { count: maxTagAmount }));
       return;
     }
     if (!tags.includes(tag)) setTags([...tags, tag]);
@@ -80,14 +80,14 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
     const postPromise = axios.post(POST_URL, payload);
 
     toast.promise(postPromise, {
-      loading: "正在提交貢獻...",
-      success: "感謝您的貢獻！資料已更新 🎉",
-      error: "提交失敗，請稍後再試",
+      loading: t("submit_loading"),
+      success: t("submit_success"),
+      error: t("submit_error"),
     });
 
     try {
       await postPromise;
-      onCafeUpdated(); // 通知 App 刷新
+      onCafeUpdated();
       onClose();
     } catch (error) {
       console.error(error);
@@ -97,25 +97,22 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
   };
 
   return (
-    // 遮罩層 (點擊背景關閉)
     <div className="fixed inset-0 z-[200] flex justify-end">
       <div
         className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       ></div>
 
-      {/* 右側滑入面板 */}
       <div className="relative w-full max-w-md bg-white h-full shadow-2xl overflow-y-auto p-6 animate-slide-in-right">
         <div className="flex justify-between items-center mb-6 border-b pb-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">📝 貢獻資訊</h2>
-            <p className="text-sm text-blue-600 font-medium mt-1">
-              {cafe.name}
-            </p>
+            <h2 className="text-xl font-bold text-gray-800">📝 {t("contribute_title")}</h2>
+            <p className="text-sm text-blue-600 font-medium mt-1">{cafe.name}</p>
           </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full text-gray-500"
+            aria-label="Close"
           >
             ✕
           </button>
@@ -125,7 +122,7 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
           {/* Tags */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">
-              新增標籤 (Tag)
+              {t("add_tag_label")}
             </label>
             <input
               type="text"
@@ -135,7 +132,7 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
               className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="輸入標籤後按 Enter (最多8字)"
+              placeholder={t("tag_input_placeholder")}
             />
 
             <datalist id="tag-options">
@@ -144,17 +141,16 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
               ))}
             </datalist>
 
-            {/* 已選 Tags */}
             <div className="flex flex-wrap gap-2 mt-3">
-              {tags.map((t) => (
+              {tags.map((tag) => (
                 <span
-                  key={t}
+                  key={tag}
                   className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1"
                 >
-                  #{t}{" "}
+                  #{tag}{" "}
                   <button
                     type="button"
-                    onClick={() => setTags(tags.filter((x) => x !== t))}
+                    onClick={() => setTags(tags.filter((x) => x !== tag))}
                     className="hover:text-blue-900"
                   >
                     ×
@@ -163,22 +159,21 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
               ))}
             </div>
 
-            {/* 建議 Tags */}
             {existingTags.length > 0 && (
               <div className="mt-3">
-                <p className="text-xs text-gray-400 mb-2">常用標籤：</p>
+                <p className="text-xs text-gray-400 mb-2">{t("suggested_tags")}</p>
                 <div className="flex flex-wrap gap-2">
                   {existingTags
-                    .filter((t) => !tags.includes(t))
+                    .filter((tag) => !tags.includes(tag))
                     .slice(0, 10)
-                    .map((t) => (
+                    .map((tag) => (
                       <button
-                        key={t}
+                        key={tag}
                         type="button"
-                        onClick={() => handleAddTag(t)}
+                        onClick={() => handleAddTag(tag)}
                         className="text-xs border border-gray-200 hover:bg-gray-50 px-2 py-1 rounded-md text-gray-600"
                       >
-                        + {t}
+                        + {tag}
                       </button>
                     ))}
                 </div>
@@ -189,7 +184,7 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
           {/* WiFi */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <label className="block text-sm font-bold text-gray-700 mb-2">
-              WiFi 穩定度 (不評分請留 0)
+              {t("wifi_label")}
             </label>
             <div className="flex items-center gap-4">
               <input
@@ -211,31 +206,31 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                插座數量
+                {t("outlet_label")}
               </label>
               <select
                 value={socket}
                 onChange={(e) => setSocket(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg p-2.5 bg-white"
               >
-                <option value="unknown">不更新</option>
-                <option value="many">很多</option>
-                <option value="few">少量</option>
-                <option value="none">沒有</option>
+                <option value="unknown">{t("no_update")}</option>
+                <option value="many">{t("outlet_many")}</option>
+                <option value="few">{t("outlet_few")}</option>
+                <option value="none">{t("outlet_none")}</option>
               </select>
             </div>
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                限時狀況
+                {t("time_limit_label")}
               </label>
               <select
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg p-2.5 bg-white"
               >
-                <option value="unknown">不更新</option>
-                <option value="limited">限時</option>
-                <option value="unlimited">不限時</option>
+                <option value="unknown">{t("no_update")}</option>
+                <option value="limited">{t("time_limited_option")}</option>
+                <option value="unlimited">{t("time_unlimited_option")}</option>
               </select>
             </div>
           </div>
@@ -243,14 +238,14 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
           {/* 評論 */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-2">
-              留言評論
+              {t("comment_label")}
             </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               maxLength={200}
               className="w-full border border-gray-300 rounded-lg p-3 text-sm h-28 resize-none focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="分享一下這裡的環境、咖啡好不好喝..."
+              placeholder={t("comment_placeholder")}
             />
             <p
               className={`text-xs text-right mt-1 ${comment.length >= 180 ? "text-red-400" : "text-gray-400"}`}
@@ -266,7 +261,7 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
               disabled={isSubmitting}
               className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-blue-700 transition shadow-lg shadow-blue-200 disabled:bg-gray-400"
             >
-              {isSubmitting ? "提交中..." : "確認貢獻"}
+              {isSubmitting ? t("submitting") : t("submit_btn")}
             </button>
           </div>
         </form>

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useMap } from "@vis.gl/react-google-maps";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
   const map = useMap();
+  const { t, i18n } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isLocating, setIsLocating] = useState(false);
@@ -37,7 +39,7 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
   };
 
   const handleLocateMe = () => {
-    if (!navigator.geolocation) return toast.error("不支援定位");
+    if (!navigator.geolocation) return toast.error(t("geolocation_not_supported"));
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -51,10 +53,14 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
         setIsLocating(false);
       },
       () => {
-        toast.error("無法獲取位置");
+        toast.error(t("location_error"));
         setIsLocating(false);
       },
     );
+  };
+
+  const toggleLanguage = () => {
+    i18n.changeLanguage(i18n.language.startsWith("zh") ? "en" : "zh");
   };
 
   return (
@@ -66,7 +72,7 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
         <div className="relative flex-1">
           <input
             type="text"
-            placeholder="搜尋咖啡廳..."
+            placeholder={t("search_placeholder")}
             className="w-full bg-transparent outline-none text-sm"
             value={searchQuery}
             onChange={handleSearch}
@@ -91,15 +97,25 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
         <span className="text-gray-400">🔍</span>
       </div>
 
-      <button
-        onClick={handleLocateMe}
-        disabled={isLocating}
-        className={`pointer-events-auto cursor-pointer ml-2 flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition ${isLocating ? "bg-blue-100 text-blue-600" : "bg-white hover:bg-gray-100 text-gray-600"}`}
-        title="回到目前位置"
-        aria-label="回到目前位置"
-      >
-        {isLocating ? "..." : "📍"}
-      </button>
+      <div className="pointer-events-auto flex items-center gap-2 ml-2">
+        <button
+          onClick={toggleLanguage}
+          className="flex items-center justify-center w-10 h-10 rounded-full shadow-lg bg-white hover:bg-gray-100 text-gray-700 text-sm font-bold transition"
+          aria-label="Toggle language"
+        >
+          {i18n.language.startsWith("zh") ? "EN" : "中"}
+        </button>
+
+        <button
+          onClick={handleLocateMe}
+          disabled={isLocating}
+          className={`cursor-pointer flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition ${isLocating ? "bg-blue-100 text-blue-600" : "bg-white hover:bg-gray-100 text-gray-600"}`}
+          title={t("locate_me")}
+          aria-label={t("locate_me")}
+        >
+          {isLocating ? "..." : "📍"}
+        </button>
+      </div>
     </div>
   );
 }

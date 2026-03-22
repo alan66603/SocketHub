@@ -1,18 +1,24 @@
-// frontend/src/components/CafeDetailPanel.jsx
-import React from "react";
-
-const socketMap = { many: "很多", few: "少量", none: "沒有", unknown: "未知" };
-const timeLimitMap = {
-  limited: "有限時",
-  unlimited: "不限時",
-  unknown: "未知",
-};
+import { useTranslation } from "react-i18next";
 
 function CafeDetailPanel({ cafe, onClose, onEdit }) {
-  // 格式化日期
+  const { t, i18n } = useTranslation();
+
+  const socketMap = {
+    many: t("socket_many_detail"),
+    few: t("socket_few_detail"),
+    none: t("socket_none_detail"),
+    unknown: t("socket_unknown"),
+  };
+  const timeLimitMap = {
+    limited: t("time_limited_detail"),
+    unlimited: t("time_unlimited_detail"),
+    unknown: t("time_unknown"),
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("zh-TW", {
+    const locale = i18n.language.startsWith("zh") ? "zh-TW" : "en-US";
+    return new Date(dateString).toLocaleDateString(locale, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -21,19 +27,18 @@ function CafeDetailPanel({ cafe, onClose, onEdit }) {
 
   return (
     <div className="fixed inset-0 z-[200] flex justify-end">
-      {/* 點擊遮罩關閉 */}
       <div
         className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       ></div>
 
-      {/* 右側滑入面板 */}
       <div className="relative w-full max-w-md bg-white h-full shadow-2xl overflow-y-auto p-0 animate-slide-in-right flex flex-col">
-        {/* Header: 圖片或顏色塊 + 關閉按鈕 */}
+        {/* Header */}
         <div className="bg-blue-600 h-32 relative shrink-0">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white rounded-full p-2 transition backdrop-blur-md"
+            aria-label="Close"
           >
             ✕
           </button>
@@ -42,7 +47,7 @@ function CafeDetailPanel({ cafe, onClose, onEdit }) {
           </div>
         </div>
 
-        {/* Body: 內容區 */}
+        {/* Body */}
         <div className="p-6 flex-1 overflow-y-auto">
           {/* 地址 */}
           <div className="flex items-start gap-2 text-gray-600 mb-6">
@@ -53,7 +58,7 @@ function CafeDetailPanel({ cafe, onClose, onEdit }) {
           {/* Tags */}
           <div className="mb-6">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-              標籤
+              {t("tags_section")}
             </h3>
             <div className="flex flex-wrap gap-2">
               {cafe.tags && cafe.tags.length > 0 ? (
@@ -66,7 +71,7 @@ function CafeDetailPanel({ cafe, onClose, onEdit }) {
                   </span>
                 ))
               ) : (
-                <span className="text-sm text-gray-400 italic">尚無標籤</span>
+                <span className="text-sm text-gray-400 italic">{t("no_tags")}</span>
               )}
             </div>
           </div>
@@ -74,30 +79,30 @@ function CafeDetailPanel({ cafe, onClose, onEdit }) {
           {/* 狀態 Grid */}
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="bg-gray-50 p-3 rounded-lg text-center">
-              <div className="text-xs text-gray-500 mb-1">WiFi 穩定度</div>
+              <div className="text-xs text-gray-500 mb-1">{t("wifi_stability")}</div>
               <div className="text-xl font-bold text-blue-600">
                 {cafe.ratings.wifiStability || "-"}{" "}
                 <span className="text-sm text-gray-400">/ 5</span>
               </div>
             </div>
             <div className="bg-gray-50 p-3 rounded-lg text-center">
-              <div className="text-xs text-gray-500 mb-1">插座</div>
+              <div className="text-xs text-gray-500 mb-1">{t("outlet_section")}</div>
               <div className="text-lg font-bold text-gray-700">
                 {socketMap[cafe.features.hasManySockets] || "-"}
               </div>
             </div>
             <div className="bg-gray-50 p-3 rounded-lg text-center">
-              <div className="text-xs text-gray-500 mb-1">限時</div>
+              <div className="text-xs text-gray-500 mb-1">{t("time_limit_section")}</div>
               <div className="text-lg font-bold text-gray-700">
                 {timeLimitMap[cafe.features.timeLimit] || "-"}
               </div>
             </div>
           </div>
 
-          {/* 評論區 (重點) */}
+          {/* 評論區 */}
           <div>
             <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-              💬 評論
+              💬 {t("comments_section")}
               <span className="text-sm font-normal text-gray-500">
                 ({cafe.comments?.length || 0})
               </span>
@@ -105,7 +110,6 @@ function CafeDetailPanel({ cafe, onClose, onEdit }) {
 
             <div className="space-y-4">
               {cafe.comments && cafe.comments.length > 0 ? (
-                // 這裡把評論倒序顯示 (最新的在上面)
                 [...cafe.comments].reverse().map((comment, index) => (
                   <div
                     key={index}
@@ -121,21 +125,21 @@ function CafeDetailPanel({ cafe, onClose, onEdit }) {
                 ))
               ) : (
                 <div className="text-center py-8 text-gray-400 bg-gray-50 rounded-lg">
-                  <p>還沒有人留言過...</p>
-                  <p className="text-sm">成為第一個分享心得的人吧！</p>
+                  <p>{t("no_comments")}</p>
+                  <p className="text-sm">{t("no_comments_prompt")}</p>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Footer: 編輯按鈕 */}
+        {/* Footer */}
         <div className="p-4 border-t border-gray-100 bg-white shrink-0">
           <button
             onClick={onEdit}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-lg transition shadow-lg shadow-blue-200 flex items-center justify-center gap-2"
           >
-            <span>✍️</span> 我要補充 / 評分
+            <span>✍️</span> {t("edit_btn")}
           </button>
         </div>
       </div>
