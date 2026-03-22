@@ -1,14 +1,37 @@
-import { useState } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useMap } from "@vis.gl/react-google-maps";
 import toast from "react-hot-toast";
 import { useTranslation } from "react-i18next";
+import FilterPanel from "./FilterPanel";
 
-function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
+function TopBar({ cafes, onSelectCafe, onUserLocationUpdate, userLocation, filters, setFilters }) {
   const map = useMap();
   const { t, i18n } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isLocating, setIsLocating] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filterWrapperRef = useRef(null);
+
+  const activeFilterCount = useMemo(() => {
+    if (!filters) return 0;
+    let count = 0;
+    if (filters.minWifi > 0) count++;
+    if (filters.outlets.length > 0) count++;
+    if (filters.timeLimit.length > 0) count++;
+    if (filters.sortBy !== "default") count++;
+    return count;
+  }, [filters]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (filterWrapperRef.current && !filterWrapperRef.current.contains(e.target)) {
+        setIsFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSearch = (e) => {
     const query = e.target.value;
@@ -77,20 +100,26 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
             value={searchQuery}
             onChange={handleSearch}
           />
-          {searchResults.length > 0 && (
+          {searchQuery.trim() !== "" && (
             <div className="absolute top-12 left-0 w-full bg-white shadow-xl rounded-lg max-h-60 overflow-y-auto border border-gray-100 z-50">
-              {searchResults.map((cafe) => (
-                <div
-                  key={cafe._id}
-                  className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0"
-                  onClick={() => handleResultClick(cafe)}
-                >
-                  <div className="font-bold text-gray-800">{cafe.name}</div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {cafe.location.address}
+              {searchResults.length > 0 ? (
+                searchResults.map((cafe) => (
+                  <div
+                    key={cafe._id}
+                    className="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm border-b last:border-0"
+                    onClick={() => handleResultClick(cafe)}
+                  >
+                    <div className="font-bold text-gray-800">{cafe.name}</div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {cafe.location.address}
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="px-4 py-3 text-sm text-gray-400 italic text-center">
+                  {t("no_results")}
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
@@ -115,6 +144,28 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
         >
           {isLocating ? "..." : "📍"}
         </button>
+
+        <div ref={filterWrapperRef} className="relative">
+          <button
+            onClick={() => setIsFilterOpen((prev) => !prev)}
+            className={`relative flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition text-sm font-bold ${isFilterOpen || activeFilterCount > 0 ? "bg-blue-600 text-white" : "bg-white hover:bg-gray-100 text-gray-700"}`}
+            aria-label={t("filter_title")}
+          >
+            ⚙️
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+          {isFilterOpen && (
+            <FilterPanel
+              filters={filters}
+              setFilters={setFilters}
+              userLocation={userLocation}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

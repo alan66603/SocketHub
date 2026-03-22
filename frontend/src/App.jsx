@@ -1,4 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+
+function haversineDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 import axios from "axios";
 import {
   AdvancedMarker,
@@ -46,13 +57,56 @@ function App() {
   const [activeState, setActiveState] = useState({ cafe: null, mode: null });
   const [userLocation, setUserLocation] = useState(null);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
+  const [isLoadingCafes, setIsLoadingCafes] = useState(true);
   const [activeCafeForContribution, setActiveCafeForContribution] =
     useState(null);
   const [activeCafeDetail, setActiveCafeDetail] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(defaultZoomLevel);
+  const [filters, setFilters] = useState({
+    minWifi: 0,
+    outlets: [],
+    timeLimit: [],
+    sortBy: "default",
+  });
 
   const hoverTimeoutRef = useRef(null);
   const mapIdleDebounceRef = useRef(null);
+
+  const filteredCafes = useMemo(() => {
+    let result = [...cafes];
+    if (filters.minWifi > 0)
+      result = result.filter((c) => c.ratings?.wifiStability >= filters.minWifi);
+    if (filters.outlets.length > 0)
+      result = result.filter((c) =>
+        filters.outlets.includes(c.features?.hasManySockets),
+      );
+    if (filters.timeLimit.length > 0)
+      result = result.filter((c) =>
+        filters.timeLimit.includes(c.features?.timeLimit),
+      );
+    if (filters.sortBy === "wifi")
+      result.sort(
+        (a, b) =>
+          (b.ratings?.wifiStability || 0) - (a.ratings?.wifiStability || 0),
+      );
+    else if (filters.sortBy === "distance" && userLocation)
+      result.sort(
+        (a, b) =>
+          haversineDistance(
+            userLocation.lat,
+            userLocation.lng,
+            a.location.coordinates[1],
+            a.location.coordinates[0],
+          ) -
+          haversineDistance(
+            userLocation.lat,
+            userLocation.lng,
+            b.location.coordinates[1],
+            b.location.coordinates[0],
+          ),
+      );
+    return result;
+  }, [cafes, filters, userLocation]);
 
   const allTags = useMemo(() => {
     const tags = new Set();
@@ -64,7 +118,8 @@ function App() {
     return Array.from(tags);
   }, [cafes]);
 
-  const fetchCafes = () => {
+  const fetchCafes = (showLoader = false) => {
+    if (showLoader) setIsLoadingCafes(true);
     axios
       .get(API_URL)
       .then((res) => {
@@ -78,11 +133,14 @@ function App() {
       .catch((err) => {
         console.error(err);
         toast.error(t("backend_error"));
+      })
+      .finally(() => {
+        if (showLoader) setIsLoadingCafes(false);
       });
   };
 
   useEffect(() => {
-    fetchCafes();
+    fetchCafes(true);
   }, []);
 
   const handleMapIdle = (mapEvent) => {
@@ -194,7 +252,7 @@ function App() {
           disableDefaultUI={true}
         >
           {currentZoom >= 13 &&
-            cafes.map((cafe) => (
+            filteredCafes.map((cafe) => (
               <AdvancedMarker
                 key={cafe._id}
                 position={{
@@ -332,10 +390,28 @@ function App() {
         </Map>
 
         <TopBar
-          cafes={cafes}
+          cafes={filteredCafes}
           onSelectCafe={(cafe) => setActiveState({ cafe, mode: "click" })}
           onUserLocationUpdate={(loc) => setUserLocation(loc)}
+          userLocation={userLocation}
+          filters={filters}
+          setFilters={setFilters}
         />
+
+        {currentZoom < 13 && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[50]">
+            <div className="bg-black/50 text-white text-sm font-medium px-4 py-2 rounded-full backdrop-blur-sm">
+              {t("zoom_hint")}
+            </div>
+          </div>
+        )}
+
+        {isLoadingCafes && (
+          <div className="absolute inset-0 bg-white/70 flex flex-col items-center justify-center z-[60] backdrop-blur-sm pointer-events-none">
+            <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+            <p className="text-sm font-medium text-gray-600">{t("loading_cafes")}</p>
+          </div>
+        )}
 
         {isLoadingGoogle && (
           <div className="absolute top-20 right-4 bg-white/90 px-3 py-1 rounded-full shadow text-xs font-medium text-gray-500 z-50 flex items-center gap-2 border border-gray-100">
