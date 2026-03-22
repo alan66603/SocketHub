@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
@@ -249,9 +249,13 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
+              maxLength={200}
               className="w-full border border-gray-300 rounded-lg p-3 text-sm h-28 resize-none focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="分享一下這裡的環境、咖啡好不好喝..."
             />
+            <p className={`text-xs text-right mt-1 ${comment.length >= 180 ? "text-red-400" : "text-gray-400"}`}>
+              {comment.length} / 200
+            </p>
           </div>
 
           {/* 按鈕 */}
