@@ -109,3 +109,5 @@ SocketHub/
 ## Infrastructure
 AWS EC2: Dynamic, for Node.js and API computing
 AWS S3 + CloudFront: Static, for React static web page
+
+[SocketHub](https://d20u7fby0bngts.cloudfront.net/)
