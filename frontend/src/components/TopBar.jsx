@@ -18,7 +18,7 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
     const results = cafes.filter(
       (cafe) =>
         cafe.name.toLowerCase().includes(query.toLowerCase()) ||
-        cafe.location.address.toLowerCase().includes(query.toLowerCase())
+        cafe.location.address.toLowerCase().includes(query.toLowerCase()),
     );
     setSearchResults(results);
   };
@@ -53,7 +53,7 @@ function TopBar({ cafes, onSelectCafe, onUserLocationUpdate }) {
       () => {
         toast.error("無法獲取位置");
         setIsLocating(false);
-      }
+      },
     );
   };
 

@@ -3,8 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
-  const API_URL =
-    import.meta.env.VITE_API_URL || "/api/cafes";
+  const API_URL = import.meta.env.VITE_API_URL || "/api/cafes";
   const POST_URL = `${API_URL}/contribute`;
 
   const [tagInput, setTagInput] = useState("");
@@ -81,9 +80,9 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
     const postPromise = axios.post(POST_URL, payload);
 
     toast.promise(postPromise, {
-      loading: '正在提交貢獻...',
-      success: '感謝您的貢獻！資料已更新 🎉',
-      error: '提交失敗，請稍後再試',
+      loading: "正在提交貢獻...",
+      success: "感謝您的貢獻！資料已更新 🎉",
+      error: "提交失敗，請稍後再試",
     });
 
     try {
@@ -253,7 +252,9 @@ function ContributePanel({ cafe, onClose, onCafeUpdated, existingTags = [] }) {
               className="w-full border border-gray-300 rounded-lg p-3 text-sm h-28 resize-none focus:ring-2 focus:ring-blue-500 outline-none"
               placeholder="分享一下這裡的環境、咖啡好不好喝..."
             />
-            <p className={`text-xs text-right mt-1 ${comment.length >= 180 ? "text-red-400" : "text-gray-400"}`}>
+            <p
+              className={`text-xs text-right mt-1 ${comment.length >= 180 ? "text-red-400" : "text-gray-400"}`}
+            >
               {comment.length} / 200
             </p>
           </div>

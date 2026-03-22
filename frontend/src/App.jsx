@@ -23,7 +23,10 @@ function App() {
     savedMapState = null;
   }
 
-  const defaultPosition = savedMapState?.center || { lat: 25.033, lng: 121.5654 };
+  const defaultPosition = savedMapState?.center || {
+    lat: 25.033,
+    lng: 121.5654,
+  };
   const defaultZoomLevel = savedMapState?.zoom || 13;
   const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const API_URL = import.meta.env.VITE_API_URL || "/api/cafes";
@@ -32,7 +35,8 @@ function App() {
   const [activeState, setActiveState] = useState({ cafe: null, mode: null });
   const [userLocation, setUserLocation] = useState(null);
   const [isLoadingGoogle, setIsLoadingGoogle] = useState(false);
-  const [activeCafeForContribution, setActiveCafeForContribution] = useState(null);
+  const [activeCafeForContribution, setActiveCafeForContribution] =
+    useState(null);
   const [activeCafeDetail, setActiveCafeDetail] = useState(null);
   const [currentZoom, setCurrentZoom] = useState(defaultZoomLevel);
 
@@ -78,7 +82,10 @@ function App() {
     try {
       localStorage.setItem(
         "socketHubMapState",
-        JSON.stringify({ center: { lat: center.lat(), lng: center.lng() }, zoom })
+        JSON.stringify({
+          center: { lat: center.lat(), lng: center.lng() },
+          zoom,
+        }),
       );
     } catch {
       // ignore storage errors
@@ -94,12 +101,18 @@ function App() {
       const lng = center.lng();
       setIsLoadingGoogle(true);
       try {
-        const res = await axios.post(`${API_URL}/search`, { lat, lng, radius: 1500 });
+        const res = await axios.post(`${API_URL}/search`, {
+          lat,
+          lng,
+          radius: 1500,
+        });
         const newCafes = res.data;
         setCafes((prevCafes) => {
-          const existingIds = new Set(prevCafes.map((c) => c.googlePlaceId || c._id));
+          const existingIds = new Set(
+            prevCafes.map((c) => c.googlePlaceId || c._id),
+          );
           const uniqueNewCafes = newCafes.filter(
-            (c) => !existingIds.has(c.googlePlaceId || c._id)
+            (c) => !existingIds.has(c.googlePlaceId || c._id),
           );
           if (uniqueNewCafes.length === 0) return prevCafes;
           return [...prevCafes, ...uniqueNewCafes];
@@ -114,8 +127,10 @@ function App() {
   };
 
   const handleMouseEnter = (cafe) => {
-    if (activeState.mode === "click" && activeState.cafe?._id === cafe._id) return;
-    if (activeState.mode === "hover" && activeState.cafe?._id === cafe._id) return;
+    if (activeState.mode === "click" && activeState.cafe?._id === cafe._id)
+      return;
+    if (activeState.mode === "hover" && activeState.cafe?._id === cafe._id)
+      return;
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     hoverTimeoutRef.current = setTimeout(() => {
       setActiveState({ cafe: cafe, mode: "hover" });
@@ -124,7 +139,8 @@ function App() {
 
   const handleMouseLeave = () => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    if (activeState.mode === "hover") setActiveState({ cafe: null, mode: null });
+    if (activeState.mode === "hover")
+      setActiveState({ cafe: null, mode: null });
   };
 
   const handleClose = () => {
@@ -238,13 +254,15 @@ function App() {
                     <p>
                       🔌 插座:{" "}
                       <span className="font-medium text-gray-800">
-                        {socketMap[activeState.cafe.features.hasManySockets] || "-"}
+                        {socketMap[activeState.cafe.features.hasManySockets] ||
+                          "-"}
                       </span>
                     </p>
                     <p>
                       ⏳ 限時:{" "}
                       <span className="font-medium text-gray-800">
-                        {timeLimitMap[activeState.cafe.features.timeLimit] || "-"}
+                        {timeLimitMap[activeState.cafe.features.timeLimit] ||
+                          "-"}
                       </span>
                     </p>
                     {activeState.cafe.source === "google" && (
@@ -257,11 +275,18 @@ function App() {
                     )}
                   </div>
 
-                  {activeState.cafe.comments && activeState.cafe.comments.length > 0 && (
-                    <div className="mt-2 p-1.5 bg-gray-50 rounded text-xs text-gray-600 italic border-l-2 border-blue-400 line-clamp-2">
-                      "{activeState.cafe.comments[activeState.cafe.comments.length - 1].text}"
-                    </div>
-                  )}
+                  {activeState.cafe.comments &&
+                    activeState.cafe.comments.length > 0 && (
+                      <div className="mt-2 p-1.5 bg-gray-50 rounded text-xs text-gray-600 italic border-l-2 border-blue-400 line-clamp-2">
+                        "
+                        {
+                          activeState.cafe.comments[
+                            activeState.cafe.comments.length - 1
+                          ].text
+                        }
+                        "
+                      </div>
+                    )}
 
                   <div className="mt-3 flex items-center gap-2">
                     <button
@@ -290,7 +315,11 @@ function App() {
 
           {userLocation && (
             <AdvancedMarker position={userLocation} zIndex={100}>
-              <Pin background={"#EA4335"} glyphColor={"#FFF"} borderColor={"#FFF"} />
+              <Pin
+                background={"#EA4335"}
+                glyphColor={"#FFF"}
+                borderColor={"#FFF"}
+              />
             </AdvancedMarker>
           )}
         </Map>
