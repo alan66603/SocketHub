@@ -14,7 +14,8 @@ import CafeDetailPanel from "./components/CafeDetailPanel";
 import TopBar from "./components/TopBar";
 
 function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const googleMapsLanguage = i18n.language.startsWith("en") ? "en" : "zh-TW";
 
   let savedMapState = null;
   try {
@@ -171,7 +172,7 @@ function App() {
   };
 
   return (
-    <APIProvider apiKey={API_KEY}>
+    <APIProvider apiKey={API_KEY} language={googleMapsLanguage}>
       <div className="h-screen w-full relative">
         <Toaster
           position="bottom-left"
