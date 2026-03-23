@@ -64,10 +64,12 @@ jobs:
           # Activate the new container
           docker run -d \
             --name ${{ env.CONTAINER_NAME }} \
-            -p 3000:8080 \
+            -p 3000:3000 \
+            -e PORT=3000 \
             -e MONGO_URI="${{ secrets.MONGO_URI }}" \
             -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
             -e GOOGLE_MAPS_API_KEY="${{ secrets.GOOGLE_MAPS_API_KEY }}" \
+            -e ALLOWED_ORIGINS="${{ secrets.ALLOWED_ORIGINS }}" \
             --restart always \
             ${{ steps.build-image.outputs.image }}
           

@@ -5,11 +5,11 @@ const Cafe = require('./models/Cafe'); // load mongoose schema
 // connect to database
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    console.log('🔥 MongoDB 連線成功！準備寫入資料...');
+    console.log('MongoDB connected. Seeding data...');
     seedData();
   })
   .catch(err => {
-    console.log('❌ 連線失敗：');
+    console.log('Connection failed:');
     console.error(err);
   });
 
@@ -59,12 +59,12 @@ const seedData = async () => {
     // await Cafe.deleteMany({}); 
     
     const newCafe = await Cafe.create(sampleCafe);
-    console.log('✅ 成功寫入第一筆咖啡廳資料！');
+    console.log('Cafe record seeded successfully.');
     console.log(newCafe);
     
     // close connection
     mongoose.connection.close();
   } catch (error) {
-    console.log('❌ 寫入失敗：', error.message);
+    console.log('Seed failed:', error.message);
   }
 };

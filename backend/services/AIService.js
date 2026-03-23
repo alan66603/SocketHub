@@ -35,12 +35,12 @@ class AIService {
 
       const jsonResult = JSON.parse(text);
       console.log(
-        `✨ Gemini 判決 [${localName}] vs [${googleName}]: ${jsonResult.isSame} (${jsonResult.reason})`
+        `Gemini result [${localName}] vs [${googleName}]: ${jsonResult.isSame} (${jsonResult.reason})`
       );
       return jsonResult.isSame;
     } catch (error) {
-      console.error("Gemini Check Error:", error);
-      return false; // 失敗時保守回傳 false
+      console.error("Gemini check error:", error);
+      return false; // conservative fallback on failure
     }
   }
 }

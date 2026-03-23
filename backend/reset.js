@@ -8,18 +8,18 @@ const ResolutionLog = require("./models/ResolutionLog");
 const resetDB = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);
-    console.log("🔥 連線成功，準備清除資料...");
+    console.log("Connected. Clearing database...");
 
     await Cafe.deleteMany({});
-    console.log("✅ 已刪除所有咖啡廳資料 (Cafes)");
+    console.log("Deleted all cafe records (Cafes)");
 
     await ResolutionLog.deleteMany({});
-    console.log("✅ 已刪除所有 AI 判決紀錄 (ResolutionLogs)");
+    console.log("Deleted all AI resolution logs (ResolutionLogs)");
 
-    console.log("資料庫已重置為空");
+    console.log("Database reset complete");
     process.exit();
   } catch (error) {
-    console.error("❌ 清除失敗:", error);
+    console.error("Reset failed:", error);
     process.exit(1);
   }
 };

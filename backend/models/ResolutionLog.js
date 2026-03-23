@@ -6,7 +6,7 @@ const resolutionLogSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Cafe",
       required: true,
-      index: true, // 加索引加快查詢
+      index: true,
     },
     googlePlaceId: {
       type: String,
@@ -17,7 +17,7 @@ const resolutionLogSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
-    aiReason: String, // 選用：存下來方便除錯
+    aiReason: String, // optional: stored for debugging
   },
   { timestamps: true }
 );

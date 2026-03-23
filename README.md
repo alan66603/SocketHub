@@ -65,14 +65,14 @@ Create a `.env` file in both the `backend` and `frontend` directories.
 **Backend (backend/.env):**
 ```
 PORT=8080
-MONGO_URI=your_mongodb_connection_string
-GOOGLE_MAPS_API_KEY=your_google_maps_server_key
-GEMINI_API_KEY=your_google_gemini_api_key
+MONGO_URI=
+GOOGLE_MAPS_API_KEY=
+GEMINI_API_KEY=
 ```
 
 **Frontend(frontend/.env):**
 ```
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_client_key
+VITE_GOOGLE_MAPS_API_KEY=
 VITE_API_URL=http://localhost:8080/api/cafes
 ```
 

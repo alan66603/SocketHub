@@ -37,7 +37,6 @@ const cafeSchema = new mongoose.Schema(
       wifiVoteCount: { type: Number, default: 0 },
 
       quietness: { type: Number, min: 0, max: 5, default: 0 },
-      wifiStability: { type: Number, min: 0, max: 5, default: 0 },
       seatComfort: { type: Number, min: 0, max: 5, default: 0 },
       costPerformance: { type: Number, min: 0, max: 5, default: 0 },
       seatAvailable: { type: Number, min: 0, max: 5, default: 0 },
