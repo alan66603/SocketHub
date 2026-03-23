@@ -33,7 +33,7 @@ class CafeController {
 
   async contribute(req, res) {
     try {
-      const { googlePlaceId, name, lat, lng, wifiRating, socketStatus, timeStatus, comment, newTags } = req.body;
+      const { googlePlaceId, name, address, lat, lng, wifiRating, socketStatus, timeStatus, comment, newTags } = req.body;
 
       if (!googlePlaceId || typeof googlePlaceId !== "string") {
         return res.status(400).json({ message: "googlePlaceId is required" });
@@ -60,7 +60,7 @@ class CafeController {
         return res.status(400).json({ message: "newTags must be an array with at most 20 elements" });
       }
 
-      const result = await cafeService.contribute({ googlePlaceId, name, lat, lng, wifiRating, socketStatus, timeStatus, comment, newTags: newTags || [] });
+      const result = await cafeService.contribute({ googlePlaceId, name, address, lat, lng, wifiRating, socketStatus, timeStatus, comment, newTags: newTags || [] });
       res.json({ message: "Contribute success", cafe: result });
     } catch (error) {
       console.error(error);
@@ -68,7 +68,7 @@ class CafeController {
     }
   }
 
-  async getAll(req, res){
+  async getAll(_req, res){
     try{
         const cafes = await cafeService.getAllCafes();
         res.json(cafes);
