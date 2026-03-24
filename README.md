@@ -4,7 +4,7 @@
 
 SocketHub is a cafe map application for digital nomads, students, and remote workers. It combines real-time Google Places data with a community-contributed database to help you find workspaces with reliable WiFi, power outlets, and the right atmosphere.
 
-**Live:** [https://d20u7fby0bngts.cloudfront.net/](https://d20u7fby0bngts.cloudfront.net/)
+**Live:** [SocketHub](https://d20u7fby0bngts.cloudfront.net/)
 
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=white)
