@@ -13,7 +13,18 @@ SocketHub is a cafe map application for digital nomads, students, and remote wor
 ![AWS](https://img.shields.io/badge/AWS-EC2%20%2B%20S3%20%2B%20CloudFront-FF9900?logo=amazon-web-services&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-ECR-2496ED?logo=docker&logoColor=white)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?logo=github-actions&logoColor=white)
-![Gemini](https://img.shields.io/badge/AI-Gemini%202.5%20Flash-8E75B2?logo=google-gemini&logoColor=white)
+![Gemini](https://img.shields.io/badge/AI-Gemini%202.5%20Flash%20Lite-8E75B2?logo=google-gemini&logoColor=white)
+
+---
+
+## Features
+
+- **Map-based search** — drag the map or use current location to find nearby cafes
+- **Hybrid results** — merges Google Places data with community-contributed workspace ratings
+- **Workspace filters** — filter by WiFi stability, power outlets, quietness, seating comfort, and more
+- **Community contributions** — submit ratings or add new cafes directly from the app
+- **AI reconciliation** — Gemini AI matches local records to Google Places entries by name similarity
+- **Multilingual UI** — supports English and Traditional Chinese (i18next)
 
 ---
 
@@ -52,8 +63,7 @@ The React SPA is built by Vite and deployed as static files to an S3 bucket, ser
 **Deployment flow (GitHub Actions `frontend.yml`):**
 1. Push to `main` branch with changes under `frontend/`
 2. `npm install` → `npm run build` (Vite bundles assets with injected env vars)
-3. `aws s3 sync dist/ s3://$S3_BUCKET_NAME --delete`
-4. `aws cloudfront create-invalidation` to flush stale cache
+3. Sync `frontend/dist/` to S3 via `jakejarvis/s3-sync-action` with `--delete` (removes stale files)
 
 **Required GitHub Secrets:**
 
@@ -61,7 +71,7 @@ The React SPA is built by Vite and deployed as static files to an S3 bucket, ser
 |--------|---------|
 | `AWS_ACCESS_KEY_ID` | AWS IAM credentials |
 | `AWS_SECRET_ACCESS_KEY` | AWS IAM credentials |
-| `S3_BUCKET_NAME` | Target S3 bucket name |
+| `AWS_S3_BUCKET_NAME` | Target S3 bucket name |
 | `VITE_API_URL` | Backend API URL injected at build time |
 | `VITE_GOOGLE_MAPS_API_KEY` | Google Maps API key injected at build time |
 
@@ -122,7 +132,7 @@ Both `frontend/terraform/` and `backend/terraform/` contain Terraform configurat
 
 ### Prerequisites
 
-- Node.js v18+
+- Node.js v20+
 - MongoDB Atlas account (or local MongoDB)
 - Google Cloud Platform account with **Maps JavaScript API**, **Places API (New)**, and **Gemini API** enabled
 
