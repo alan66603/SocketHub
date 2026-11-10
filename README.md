@@ -127,11 +127,38 @@ cd ../../frontend/terraform && terraform init && terraform apply
 
 ---
 
+### AWS Credentials & IAM
+
+Two IAM identities, each with only the permissions it needs. Never use root access keys.
+
+| Identity | Used by | Permissions |
+|----------|---------|-------------|
+| `sockethub-github-actions` (group `SocketHub`) | GitHub Actions | Upload code to `sockethub-api`; sync the frontend bucket; invalidate CloudFront |
+| Your own IAM user | Local AWS CLI + Terraform | [`docs/iam/local-admin-policy.json`](docs/iam/local-admin-policy.json) |
+
+**Setting up the local CLI user:**
+
+1. IAM console → **Policies → Create policy** → JSON tab → paste [`docs/iam/local-admin-policy.json`](docs/iam/local-admin-policy.json) → name it `SocketHubLocalAdmin`
+2. **Users → Create user** (no console access needed) → attach `SocketHubLocalAdmin`
+3. Open the user → **Security credentials → Create access key** → choose *Command Line Interface (CLI)*
+4. Configure and verify:
+
+   ```bash
+   aws configure            # paste the key; region: ap-southeast-2; output: json
+   aws sts get-caller-identity   # Arn should end in :user/<your-user>, not :root
+   ```
+
+5. Delete the root account's access key: account menu → **Security credentials → Access keys**
+
+The policy is scoped to SocketHub's own resources — the `sockethub-api` function, its `sockethub-lambda-role`, its log group, `sockethub-frontend-*` buckets, and CloudFront — so it covers `terraform plan/apply`, `aws logs tail /aws/lambda/sockethub-api`, and manual `aws lambda update-function-code`, but cannot touch anything else in the account. Managing IAM users/policies themselves still requires an administrator.
+
+---
+
 ## Local Development
 
 ### Prerequisites
 
-- Node.js v20+
+- Node.js v22+
 - MongoDB Atlas account (or local MongoDB)
 - Google Cloud Platform account with **Maps JavaScript API**, **Places API (New)**, and **Gemini API** enabled
 
@@ -259,6 +286,8 @@ SocketHub/
 │   ├── terraform/         # AWS Lambda infrastructure
 │   ├── lambda.js          # Lambda entry point (serverless-http)
 │   └── server.js          # Express app; listens on PORT when run locally
+│
+├── docs/iam/              # IAM policy for the local CLI / Terraform user
 │
 └── frontend/
     ├── src/
