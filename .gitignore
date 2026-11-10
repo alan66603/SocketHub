@@ -4,3 +4,5 @@
 .terraform.lock.hcl
 *.pem
 .claude/
+backend/lambda.zip
+node_modules/

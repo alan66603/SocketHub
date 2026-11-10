@@ -1,24 +1,28 @@
-name: Deploy SocketHub to Amazon EC2
+name: Deploy SocketHub API to AWS Lambda
 
 on:
   push:
     branches: [ "main" ] # activates when code is merged to main
     paths:
-      - 'backend/**' # Acticated only when changes in ./backend
+      - 'backend/**' # Activated only when changes in ./backend
 
 env:
   AWS_REGION: ap-southeast-2
-  ECR_REPOSITORY: sockethub-backend
-  CONTAINER_NAME: sockethub-app
+  FUNCTION_NAME: sockethub-api
 
 jobs:
   deploy:
-    name: Build and Deploy
+    name: Package and Deploy
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
 
     # Set AWS credentials
     - name: Configure AWS credentials
@@ -28,50 +32,22 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
 
-    # log into Amazon ECR
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+    # Zip source + production dependencies
+    - name: Package Lambda
+      run: ./backend/scripts/package-lambda.sh
 
-    # Build and push Docker image
-    - name: Build, tag, and push image to Amazon ECR
-      id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
+    # Upload new code. Env vars (MONGO_URI, API keys) are managed by
+    # Terraform in backend/terraform/lambda.tf, not by this workflow.
+    - name: Deploy to Lambda
       run: |
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./backend
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        aws lambda update-function-code \
+          --function-name "$FUNCTION_NAME" \
+          --zip-file fileb://backend/lambda.zip
+        aws lambda wait function-updated-v2 --function-name "$FUNCTION_NAME"
 
-    # update container in EC2 remotely via SSH
-    - name: Deploy to EC2 via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-          
-          # Stop and delete old container
-          docker stop ${{ env.CONTAINER_NAME }} || true
-          docker rm ${{ env.CONTAINER_NAME }} || true
-          
-          # Pull the latest image
-          docker pull ${{ steps.build-image.outputs.image }}
-          
-          # Activate the new container
-          docker run -d \
-            --name ${{ env.CONTAINER_NAME }} \
-            -p 3000:3000 \
-            -e PORT=3000 \
-            -e MONGO_URI="${{ secrets.MONGO_URI }}" \
-            -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
-            -e GOOGLE_MAPS_API_KEY="${{ secrets.GOOGLE_MAPS_API_KEY }}" \
-            -e ALLOWED_ORIGINS="${{ secrets.ALLOWED_ORIGINS }}" \
-            --restart always \
-            ${{ steps.build-image.outputs.image }}
-          
-          # Clean useless images
-          docker image prune -f
+    # Fail the job if the deployed API doesn't answer
+    - name: Smoke test
+      run: |
+        URL=$(aws lambda get-function-url-config --function-name "$FUNCTION_NAME" --query FunctionUrl --output text)
+        curl --fail --silent --show-error --max-time 30 "${URL}api/cafes" -o /dev/null
+        echo "API OK"

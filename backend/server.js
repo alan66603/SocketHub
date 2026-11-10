@@ -37,10 +37,21 @@ app.use(
 app.use(express.json());
 
 // --- 2. Connect to database ---
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connect successfully (Server)"))
-  .catch((err) => console.error("Failed to connect:", err));
+// Cached at module scope so warm Lambda invocations reuse the same connection.
+let dbPromise = null;
+function connectDB() {
+  if (!dbPromise) {
+    dbPromise = mongoose
+      .connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 8000 })
+      .then(() => console.log("MongoDB connect successfully (Server)"))
+      .catch((err) => {
+        dbPromise = null; // allow retry on next request
+        console.error("Failed to connect:", err);
+        throw err;
+      });
+  }
+  return dbPromise;
+}
 
 app.get('/', (_req, res) => {
   res.json({
@@ -51,8 +62,13 @@ app.get('/', (_req, res) => {
 
 app.use("/api/cafes", cafeRoutes);
 
-// --- 3. Start server ---
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Test URL: http://localhost:${PORT}/api/cafes`);
-});
+// --- 3. Start server (local / Docker only; Lambda uses lambda.js) ---
+if (require.main === module) {
+  connectDB().catch(() => {});
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Test URL: http://localhost:${PORT}/api/cafes`);
+  });
+}
+
+module.exports = { app, connectDB };

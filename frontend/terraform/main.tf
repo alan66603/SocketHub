@@ -42,11 +42,14 @@ resource "aws_s3_bucket_policy" "cdn_oac_policy" {
     ]
   })
 }
-data "aws_instance" "backend_server" {
-  filter {
-    name   = "tag:Name"
-    values = ["SocketHub-Server"]
-  }
+# Backend API runs on Lambda (created in backend/terraform/lambda.tf)
+data "aws_lambda_function_url" "backend_api" {
+  function_name = "sockethub-api"
+}
+
+locals {
+  # "https://xxxx.lambda-url.ap-southeast-2.on.aws/" -> "xxxx.lambda-url.ap-southeast-2.on.aws"
+  backend_api_domain = trimsuffix(trimprefix(data.aws_lambda_function_url.backend_api.function_url, "https://"), "/")
 }
 
 # Build CloudFront Distribution (CDN)
@@ -67,23 +70,23 @@ resource "aws_cloudfront_distribution" "cdn" {
     response_page_path = "/index.html"
   }
 
-  # --- Add EC2 backend source ---
+  # --- Lambda backend source (Function URL) ---
   origin {
-    domain_name = data.aws_instance.backend_server.public_dns # EC2 public dns
-    origin_id   = "EC2-Backend"
+    domain_name = local.backend_api_domain
+    origin_id   = "Lambda-Backend"
 
     custom_origin_config {
-      http_port              = 3000
+      http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "http-only" # HTTPS -> HTTP
+      origin_protocol_policy = "https-only"
       origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
-  # --- Add routing policy：if it's /api/* then direct to EC2 ---
+  # --- Add routing policy：if it's /api/* then direct to Lambda ---
   ordered_cache_behavior {
     path_pattern     = "/api/*"
-    target_origin_id = "EC2-Backend"
+    target_origin_id = "Lambda-Backend"
 
     allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
     cached_methods   = ["GET", "HEAD"]
